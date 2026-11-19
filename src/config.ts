@@ -1,4 +1,4 @@
-function readEnv(name: 'PUBLIC_GA_MEASUREMENT_ID' | 'PUBLIC_GSC_VERIFICATION'): string {
+function readEnv(name: 'PUBLIC_GSC_VERIFICATION'): string {
   const value = import.meta.env[name];
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -10,7 +10,9 @@ export const site = {
   locale: 'en_US',
   language: 'en',
   contactEmail: 'hello@getbabeldoc.com',
-  gaMeasurementId: readEnv('PUBLIC_GA_MEASUREMENT_ID'),
+  // Committed ID so Workers Builds emits gtag without a build variable.
+  gaMeasurementId: 'G-G85NF5TB16',
+  // DNS already verifies Search Console. Leave this empty.
   gscVerification: readEnv('PUBLIC_GSC_VERIFICATION'),
   /**
    * Reserved ad slots stay hidden until this is turned on.

@@ -13,14 +13,15 @@ npm run dev
 
 `npm run build` writes the static site to `dist/`. `npm run preview` serves that folder locally. `npm run check` runs the Astro type checker.
 
-Copy `.env.example` to `.env` only when you have real values. Both variables are optional:
+The GA4 measurement ID is `G-G85NF5TB16` in `src/config.ts`. Every page includes the gtag snippet from that value. It is not a build variable, so Workers Builds does not need `PUBLIC_GA_MEASUREMENT_ID`.
+
+Copy `.env.example` to `.env` only if you set Search Console meta verification. That variable is optional:
 
 | Variable | Effect when empty |
 | --- | --- |
-| `PUBLIC_GA_MEASUREMENT_ID` | No Google Analytics script is rendered. |
-| `PUBLIC_GSC_VERIFICATION` | The Search Console meta tag keeps the placeholder content `GSC_VERIFICATION_PLACEHOLDER`. |
+| `PUBLIC_GSC_VERIFICATION` | The Search Console meta tag keeps the placeholder content `GSC_VERIFICATION_PLACEHOLDER`. The live site is verified through DNS, so this stays empty. |
 
-These are read at **build time**. On a static site they are baked into the HTML. Set them as Workers Builds build variables, then build again. A Worker runtime variable will not change pages that are already built.
+`PUBLIC_GSC_VERIFICATION` is read at **build time** and baked into the HTML. A Worker runtime variable will not change pages that are already built.
 
 ## Add a tool page
 
@@ -62,10 +63,11 @@ Build settings, from **Settings → Build**:
 
 After the first successful deploy, attach the custom domain `getbabeldoc.com` to the Worker. Point `www` at the apex with a 301, use SSL **Full (strict)**, and keep HTTPS rewrites, Brotli, and HTTP/3 on. Those are dashboard and DNS settings, not part of this repository.
 
-Optional build variables, same screen:
+The GA4 measurement ID lives in `src/config.ts` (`gaMeasurementId`). Do not set it as a Workers Builds variable.
 
-- `PUBLIC_GA_MEASUREMENT_ID` — GA4 measurement ID, shaped like `G-XXXXXXXXXX`. Leave unset until the property exists.
-- `PUBLIC_GSC_VERIFICATION` — the Google Search Console meta verification code. Leave unset to keep the placeholder.
+Optional build variable, same screen:
+
+- `PUBLIC_GSC_VERIFICATION` — the Google Search Console meta verification code. Leave unset. The site is already verified through DNS, and the meta tag keeps the placeholder.
 
 Do not put secrets in `wrangler.jsonc`. This site has none.
 
