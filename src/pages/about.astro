@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'About BabelDoc | BabelDoc';
+const description =
+  'Learn what BabelDoc is, who it is for, and how new free tools get added. Every page has to work before it is published. Read how the site is run today.';
+---
+
+<BaseLayout title={title} description={description} ogTitle="About BabelDoc">
+  <article class="max-w-3xl">
+    <h1 class="font-serif text-4xl leading-tight text-ink">About BabelDoc</h1>
+    <p class="mt-4 text-lg leading-8">Everyday tools, made simple.</p>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">What this site is</h2>
+      <p class="mt-3 leading-7">
+        BabelDoc is a free library of browser-based tools for everyday tasks. You open a page, use the tool, and leave with a result. There is no account and no install.
+      </p>
+      <p class="mt-3 leading-7">
+        The site is one brand, at getbabeldoc.com. New tools are added as pages under /tools/, not as separate websites.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Who it is for</h2>
+      <p class="mt-3 leading-7">
+        It is for people who want a straightforward tool in English: count something, convert something, or generate something, then move on. The first page is a word counter. More tools will follow the same pattern.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">How tools are added</h2>
+      <p class="mt-3 leading-7">
+        A page is published only when the tool works in the browser and the page explains what it does, what it does not do, and how to use it. Addresses stay put after they are published. A category can change in the lists, but the tool’s URL does not.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Who runs it</h2>
+      <p class="mt-3 leading-7">
+        BabelDoc is an independent website. This page does not name a company, a team size, or outside endorsements, because none are claimed here.
+      </p>
+      <p class="mt-3 leading-7">
+        Questions and corrections can go to <a class="text-accent underline-offset-4 hover:underline" href="mailto:hello@getbabeldoc.com">hello@getbabeldoc.com</a>.
+        You can also read the <a class="text-accent underline-offset-4 hover:underline" href="/privacy/">privacy policy</a>
+        or browse the <a class="text-accent underline-offset-4 hover:underline" href="/tools/">tools directory</a>.
+      </p>
+    </section>
+  </article>
+</BaseLayout>

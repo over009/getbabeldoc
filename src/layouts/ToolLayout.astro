@@ -1,0 +1,127 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import Faq from '../components/Faq.astro';
+import AdSlot from '../components/AdSlot.astro';
+import { getRelated, type ToolDefinition } from '../data/registry';
+import { breadcrumbLd, faqLd, webApplicationLd } from '../lib/seo';
+
+interface Props {
+  tool: ToolDefinition;
+}
+
+const { tool } = Astro.props;
+const ToolUi = tool.component;
+const related = getRelated(tool);
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'Tools', href: '/tools/' },
+  { name: tool.name, href: `/tools/${tool.slug}/` },
+];
+---
+
+<BaseLayout
+  title={tool.title}
+  description={tool.description}
+  ogTitle={tool.ogTitle}
+  jsonLd={[
+    webApplicationLd(tool),
+    faqLd(tool.faqs),
+    breadcrumbLd(crumbs),
+  ]}
+>
+  <article class="max-w-3xl">
+    <Breadcrumb items={crumbs} />
+    <header>
+      <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">{tool.h1}</h1>
+      <p class="mt-4 text-lg leading-8">{tool.intro}</p>
+    </header>
+
+    <div class="mt-8">
+      <ToolUi />
+      <p class="mt-3 text-sm leading-6 text-muted">{tool.disclaimer}</p>
+    </div>
+
+    <div class="mt-8">
+      <AdSlot name="after-tool" />
+    </div>
+
+    <section id="how-to" class="mt-10">
+      <h2 class="font-serif text-2xl text-ink">{tool.howToTitle}</h2>
+      <ol class="mt-4 list-decimal space-y-2 pl-5">
+        {tool.howTo.map((step) => <li class="pl-1">{step}</li>)}
+      </ol>
+    </section>
+
+    {
+      tool.sections.map((section) => (
+        <section class="mt-10">
+          <h2 class="font-serif text-2xl text-ink">{section.heading}</h2>
+          {section.paragraphs.map((paragraph) => (
+            <p class="mt-3 leading-7">{paragraph}</p>
+          ))}
+          {section.subsections?.map((subsection) => (
+            <div class="mt-6">
+              <h3 class="font-serif text-xl text-ink">{subsection.heading}</h3>
+              {subsection.paragraphs.map((paragraph) => (
+                <p class="mt-3 leading-7">{paragraph}</p>
+              ))}
+            </div>
+          ))}
+        </section>
+      ))
+    }
+
+    <div class="mt-10">
+      <AdSlot name="before-faq" />
+    </div>
+
+    <Faq items={tool.faqs} />
+
+    <section id="related-tools" class="mt-12">
+      <h2 class="font-serif text-2xl text-ink">Related tools</h2>
+      {
+        related.length > 0 ? (
+          <ul class="mt-4 grid gap-4 sm:grid-cols-2">
+            {related.map((item) => (
+              <li class="rounded-lg border border-line bg-white p-4">
+                <a class="font-serif text-lg text-ink underline-offset-4 hover:underline" href={`/tools/${item.slug}/`}>
+                  {item.name}
+                </a>
+                <p class="mt-2 text-sm leading-6 text-muted">{item.cardBlurb}</p>
+                <a
+                  class="mt-3 inline-flex w-fit items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink no-underline hover:bg-ink hover:text-paper"
+                  href={`/tools/${item.slug}/`}
+                >
+                  {item.buttonLabel}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <>
+            <p class="mt-3 leading-7">
+              This is the first tool on BabelDoc, so there is no related tool to link yet. New tools will be linked here, and those pages will link back.
+            </p>
+            <ul class="mt-4 list-disc space-y-2 pl-5">
+              <li>
+                <a class="text-accent underline-offset-4 hover:underline" href="/tools/">
+                  Browse the tools directory
+                </a>
+              </li>
+              <li>
+                <a class="text-accent underline-offset-4 hover:underline" href="/">
+                  Back to the BabelDoc homepage
+                </a>
+              </li>
+            </ul>
+          </>
+        )
+      }
+    </section>
+
+    <div class="mt-12">
+      <AdSlot name="before-footer" />
+    </div>
+  </article>
+</BaseLayout>

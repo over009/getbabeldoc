@@ -1,0 +1,23 @@
+---
+import type { ToolFaq } from '../data/registry';
+
+interface Props {
+  items: ToolFaq[];
+}
+
+const { items } = Astro.props;
+---
+
+<section id="faq" class="mt-12">
+  <h2 class="font-serif text-2xl text-ink">Frequently asked questions</h2>
+  <div class="mt-4 space-y-6">
+    {
+      items.map((item) => (
+        <div>
+          <h3 class="font-serif text-lg text-ink">{item.question}</h3>
+          <p class="mt-2 leading-7">{item.answer}</p>
+        </div>
+      ))
+    }
+  </div>
+</section>

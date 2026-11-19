@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Page Not Found | BabelDoc';
+const description =
+  'This page is not on BabelDoc. Check the address, or go back to the homepage and the tools directory to find a working free tool. No account is required.';
+---
+
+<BaseLayout title={title} description={description} noindex={true} ogTitle="Page not found">
+  <article class="max-w-3xl">
+    <h1 class="font-serif text-4xl leading-tight text-ink">Page not found</h1>
+    <p class="mt-4 leading-7">
+      That address is not a BabelDoc page. The link may be old, or the path may be mistyped.
+    </p>
+    <ul class="mt-6 list-disc space-y-2 pl-5">
+      <li>
+        <a class="text-accent underline-offset-4 hover:underline" href="/">Go to the homepage</a>
+      </li>
+      <li>
+        <a class="text-accent underline-offset-4 hover:underline" href="/tools/">Browse the tools directory</a>
+      </li>
+    </ul>
+  </article>
+</BaseLayout>

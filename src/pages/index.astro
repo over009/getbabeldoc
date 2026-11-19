@@ -1,0 +1,61 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ToolCard from '../components/ToolCard.astro';
+import { latestTools, toolsByCategory } from '../data/registry';
+import { organizationLd, websiteLd } from '../lib/seo';
+
+const title = 'BabelDoc | Everyday Tools, Made Simple';
+const description =
+  'Free online tools for everyday tasks. Convert, calculate, and generate right in your browser — fast, simple, and private. No signup needed. Try a tool now.';
+const latest = latestTools();
+const groups = toolsByCategory();
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogTitle="Everyday tools, made simple"
+  ogDescription={description}
+  jsonLd={[websiteLd(description), organizationLd()]}
+>
+  <div class="max-w-3xl">
+    <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">Free Everyday Tools, Made Simple</h1>
+    <p class="mt-4 text-lg leading-8">Everyday tools, made simple.</p>
+    <p class="mt-3 leading-7">
+      BabelDoc is a growing library of free, browser-based tools for everyday tasks. Open a page, use the tool, and get a result without an account. Pages are added when they work, not before.
+    </p>
+  </div>
+
+  <section class="mt-12" aria-labelledby="latest-tools">
+    <h2 id="latest-tools" class="font-serif text-2xl text-ink">Latest tools</h2>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+      {latest.map((tool) => <ToolCard tool={tool} />)}
+    </div>
+  </section>
+
+  {
+    groups.map((group) => (
+      <section class="mt-12" aria-labelledby={`category-${group.category.id}`}>
+        <h2 id={`category-${group.category.id}`} class="font-serif text-2xl text-ink">
+          {group.category.name}
+        </h2>
+        <p class="mt-2 max-w-3xl leading-7 text-muted">{group.category.description}</p>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          {group.tools.map((tool) => (
+            <ToolCard tool={tool} />
+          ))}
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="mt-12 max-w-3xl" aria-labelledby="why-babeldoc">
+    <h2 id="why-babeldoc" class="font-serif text-2xl text-ink">Why use BabelDoc</h2>
+    <ul class="mt-4 list-disc space-y-2 pl-5">
+      <li>The tools are free, and you do not need an account.</li>
+      <li>The word counter runs in your browser. Your text is not uploaded.</li>
+      <li>Pages are static and light. JavaScript is limited to the tool that needs it.</li>
+      <li>A tool is published only when it can produce a result. If a later tool needs a server, that page and the privacy policy will say so.</li>
+    </ul>
+  </section>
+</BaseLayout>
