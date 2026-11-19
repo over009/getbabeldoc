@@ -53,7 +53,7 @@ Build settings, from **Settings → Build**:
 | Deploy command | `npx wrangler deploy` |
 | Production branch | `main` |
 
-`npm run build` must run before deploy so `dist/` exists. Workers Builds does not run the `build` block inside `wrangler.jsonc`. `npx wrangler deploy` publishes the Worker and the static assets in `assets.directory` (`./dist`). There is no Worker script: this project is assets only.
+`npm run build` must run before deploy so `dist/` exists. Production builds run that command in Workers Builds, then `npx wrangler deploy`. Pull request previews run `npx wrangler preview` and do not run the dashboard build command first, so `wrangler.jsonc` also sets `build.command` to `npm run build`. Wrangler runs that before it reads `./dist`. There is no Worker script: this project is assets only.
 
 `wrangler.jsonc` also sets:
 

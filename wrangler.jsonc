@@ -15,6 +15,10 @@
       "head_sampling_rate": 0.01
     }
   },
+  // Preview builds invoke `wrangler preview` without the dashboard build step.
+  "build": {
+    "command": "npm run build"
+  },
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash",
