@@ -197,22 +197,22 @@ export const tools: ToolDefinition[] = [
     h1: 'Token Counter',
     title: 'Token Counter — GPT, Claude, and Gemini | BabelDoc',
     description:
-      'Count GPT tokens with the public OpenAI tokenizer, and estimate Claude or Gemini tokens. Type a price per million tokens. Your text stays in this browser.',
+      'Count GPT tokens with the public OpenAI tokenizer, and estimate Claude or Gemini tokens. Paste text or upload a file. It stays in this browser.',
     ogTitle: 'Token counter for GPT, Claude, and Gemini',
     category: 'text',
     cardBlurb: 'Count GPT tokens exactly, and estimate Claude and Gemini tokens.',
     buttonLabel: 'Count tokens',
     intro:
-      'Paste text and see tokens, characters, and words update as you type. GPT-4o, GPT-4.1, and o-series models use OpenAI’s o200k_base tokenizer. GPT-4 and GPT-3.5 use cl100k_base. Claude and Gemini are estimates, because their tokenizers are not public. Your text never leaves this browser.',
+      'Paste text, or upload a text or code file, and see tokens, characters, and words update as you type. GPT-4o, GPT-4.1, and o-series models use OpenAI’s o200k_base tokenizer. GPT-4 and GPT-3.5 use cl100k_base. Claude and Gemini are estimates, because their tokenizers are not public. The text and the file stay in this browser.',
     disclaimer:
       'GPT counts use the tokenizer named on the page. Claude and Gemini figures are estimates, not a vendor bill. A chat API can add tokens for message framing that are not in the box. Your text stays in this browser.',
     howToTitle: 'How to use this token counter',
     howTo: [
       'Choose a model. GPT-4o, GPT-4.1, and o-series share one OpenAI tokenizer. GPT-4 and GPT-3.5 share another. Claude and Gemini stay on the estimate.',
-      'Paste or type your text. Tokens, characters, and words update as you type.',
+      'Paste text, type, or press Upload file. You can also drop a text file on the box. The file is read in this browser and is not uploaded.',
       'Read the badge next to Tokens. Exact means the OpenAI tokenizer ran in your browser. Estimate means a character rule of thumb.',
       'To price a call, type what you pay per 1 million tokens. The page does not keep a price list.',
-      'Press Clear text to empty the box. This page does not save what you pasted.',
+      'Press Clear text to empty the box. This page does not save what you pasted or the file you opened.',
     ],
     sections: [
       {
@@ -225,7 +225,7 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'Why the same text can have different counts',
         paragraphs: [
-          'Each model family has its own vocabulary. GPT-4o, GPT-4.1, and o-series models use the public encoding named o200k_base. GPT-4 and GPT-3.5, including GPT-4 Turbo, use cl100k_base. This page loads only the encoding you pick, and only after you type, so the first visit stays lighter.',
+          'Each model family has its own vocabulary. GPT-4o, GPT-4.1, and o-series models use the public encoding named o200k_base. GPT-4 and GPT-3.5, including GPT-4 Turbo, use cl100k_base. This page loads only the encoding you pick, and only after there is text to count, so the first visit stays lighter.',
           'Those two counts are exact for the text in the box. They match the public OpenAI tokenizer. They do not add the extra tokens an API request uses for roles, tools, or a system message you did not paste.',
           'Claude and Gemini are separate products. Their tokenizers have not been published, so this page does not pretend to run them. The Claude and Gemini choices are a local estimate for when you want a rough LLM token count before you open the vendor’s own usage page.',
         ],
@@ -248,14 +248,14 @@ export const tools: ToolDefinition[] = [
         heading: 'What this counter does not do',
         paragraphs: [
           'It does not call an API, log the text, or save a draft. Closing the tab clears the box.',
-          'It does not count images, audio, or uploaded files. Paste the text you want measured. It also does not apply cached-input discounts or batch rates. Type the price you actually want to use.',
+          'It does not open PDF, Word, or other binary files. Those are not supported yet. A text or code file up to 5 MB can be read in this browser. It also does not apply cached-input discounts or batch rates. Type the price you actually want to use.',
           'Word and character totals follow the same splitting rules as the word counter. Use that page when you want sentences, paragraphs, and a reading time instead of tokens.',
         ],
       },
       {
         heading: 'Privacy',
         paragraphs: [
-          'The text never leaves your browser. The tokenizer file downloads to your device only if you pick a GPT model and there is text to count. BabelDoc does not receive the contents of the box.',
+          'The text never leaves your browser. A file you choose is read on this device and is not sent to BabelDoc. The tokenizer file downloads to your device only if you pick a GPT model and there is text to count. Closing the tab clears the box.',
           'If analytics is on, it measures the visit, not the text. The privacy policy describes the site-wide rules.',
         ],
       },
@@ -264,7 +264,12 @@ export const tools: ToolDefinition[] = [
       {
         question: 'Is my text uploaded?',
         answer:
-          'No. The token counter runs in your browser. The text is not sent to BabelDoc and is not saved by this page.',
+          'No. Typing, pasting, and opening a file all stay in your browser. The file is not sent to BabelDoc and is not saved by this page.',
+      },
+      {
+        question: 'Can I upload a file?',
+        answer:
+          'Yes. Use Upload file, or drop a file on the text box. Text and code files are supported, including .txt, .md, .csv, .json, .html, .xml, .yaml, and source files such as .py, .js, and .ts. The limit is 5 MB. PDF, Word, and other binary files are not supported yet. The file is read as UTF-8 in this browser and is not uploaded.',
       },
       {
         question: 'Which GPT models are exact?',
@@ -300,7 +305,7 @@ export const tools: ToolDefinition[] = [
     related: ['word-counter'],
     added: '2026-11-19',
     browserRequirements:
-      'Requires a modern web browser. JavaScript is required to update the counts. The OpenAI tokenizer downloads only when you count text with a GPT model. The guide on the page is available without JavaScript.',
+      'Requires a modern web browser. JavaScript is required to update the counts and to read a file you choose. The OpenAI tokenizer downloads only when you count text with a GPT model. The guide on the page is available without JavaScript.',
     component: TokenCounter,
   },
   {
