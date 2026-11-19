@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const title = 'Privacy Policy | BabelDoc';
 const description =
-  'Read how BabelDoc handles information. Current tools run in your browser, personal data is not sold, and analytics stay off until configured. Review the policy.';
+  'Read how BabelDoc handles information. Current tools run in your browser, personal data is not sold, and Google Analytics 4 may set cookies. Review the policy.';
 ---
 
 <BaseLayout title={title} description={description} ogTitle="BabelDoc privacy policy">
@@ -35,10 +35,7 @@ const description =
     <section class="mt-8">
       <h2 class="font-serif text-2xl text-ink">Cookies and analytics</h2>
       <p class="mt-3 leading-7">
-        Google Analytics 4 is not loaded unless a measurement ID is set when the site is built. Until that happens, the pages do not include the analytics script.
-      </p>
-      <p class="mt-3 leading-7">
-        If analytics is turned on later, Google Analytics 4 may set cookies and receive usage data such as pages visited, approximate location derived from IP address, and device or browser details. It will not receive the text you type into a tool. You can block analytics cookies in your browser, or use the
+        Google Analytics 4 loads on every page. It may set cookies and receive usage data such as pages visited, approximate location derived from IP address, and device or browser details. It does not receive the text you type into a tool. You can block analytics cookies in your browser, or use the
         <a class="text-accent underline-offset-4 hover:underline" href="https://tools.google.com/dlpage/gaoptout">Google Analytics opt-out add-on</a>.
         Google describes its own handling in the
         <a class="text-accent underline-offset-4 hover:underline" href="https://policies.google.com/privacy">Google Privacy Policy</a>.
