@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ToolCard from '../../components/ToolCard.astro';
+import { toolsByCategory } from '../../data/registry';
+
+const title = 'Free Online Tools | BabelDoc';
+const description =
+  'Browse every free BabelDoc tool in one directory. Open a page, use it in your browser, and get a result without creating an account. Start with the list.';
+const groups = toolsByCategory();
+---
+
+<BaseLayout title={title} description={description} ogTitle="Every free BabelDoc tool">
+  <div class="max-w-3xl">
+    <h1 class="font-serif text-4xl leading-tight text-ink">Free Online Tools</h1>
+    <p class="mt-4 leading-7">
+      Every published BabelDoc tool is listed here, grouped by what it does. Categories are for browsing only. A tool’s address stays at <span class="whitespace-nowrap">/tools/&lt;slug&gt;/</span> even if its group changes later.
+    </p>
+  </div>
+
+  {
+    groups.length > 1 && (
+      <nav class="mt-8" aria-label="Tool categories">
+        <h2 class="font-serif text-xl text-ink">Browse by category</h2>
+        <ul class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          {groups.map((group) => (
+            <li>
+              <a class="text-accent underline-offset-4 hover:underline" href={`#category-${group.category.id}`}>
+                {group.category.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )
+  }
+
+  {
+    groups.map((group) => (
+      <section class="mt-10" aria-labelledby={`category-${group.category.id}`}>
+        <h2 id={`category-${group.category.id}`} class="font-serif text-2xl text-ink">
+          {group.category.name}
+        </h2>
+        <p class="mt-2 max-w-3xl leading-7 text-muted">{group.category.description}</p>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          {group.tools.map((tool) => (
+            <ToolCard tool={tool} />
+          ))}
+        </div>
+      </section>
+    ))
+  }
+</BaseLayout>

@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Contact | BabelDoc';
+const description =
+  'Contact BabelDoc about a bug, a tool idea, a privacy request, or a partnership. Email hello@getbabeldoc.com. Messages are read, with no guaranteed reply time.';
+---
+
+<BaseLayout title={title} description={description} ogTitle="Contact BabelDoc">
+  <article class="max-w-3xl">
+    <h1 class="font-serif text-4xl leading-tight text-ink">Contact</h1>
+    <p class="mt-4 leading-7">
+      Email <a class="text-accent underline-offset-4 hover:underline" href="mailto:hello@getbabeldoc.com">hello@getbabeldoc.com</a>.
+      There is no form on this page. Messages sent to that address are read. A reply time is not guaranteed.
+    </p>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">What you can write about</h2>
+      <ul class="mt-4 list-disc space-y-2 pl-5">
+        <li>A bug or a wrong result in a tool.</li>
+        <li>A tool you would like to see, described as a task rather than a keyword list.</li>
+        <li>A privacy request. The <a class="text-accent underline-offset-4 hover:underline" href="/privacy/">privacy policy</a> explains what the site does today.</li>
+        <li>A partnership or other business note.</li>
+      </ul>
+    </section>
+  </article>
+</BaseLayout>

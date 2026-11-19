@@ -1,0 +1,29 @@
+---
+const year = new Date().getFullYear();
+const links = [
+  { href: '/about/', label: 'About' },
+  { href: '/privacy/', label: 'Privacy' },
+  { href: '/terms/', label: 'Terms' },
+  { href: '/contact/', label: 'Contact' },
+];
+---
+
+<footer class="mt-16 border-t border-line bg-paper">
+  <div class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-5 py-8 text-sm text-muted sm:px-8">
+    <p class="text-ink">Everyday tools, made simple.</p>
+    <nav aria-label="Footer">
+      <ul class="flex flex-wrap gap-x-5 gap-y-2">
+        {
+          links.map((link) => (
+            <li>
+              <a href={link.href} class="text-ink underline-offset-4 hover:underline">
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <p>&copy; {year} BabelDoc</p>
+  </div>
+</footer>

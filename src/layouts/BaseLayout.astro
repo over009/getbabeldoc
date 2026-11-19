@@ -1,0 +1,78 @@
+---
+import '../styles/global.css';
+import { site, GSC_PLACEHOLDER } from '../config';
+import { assetUrl, pageUrl } from '../lib/seo';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Analytics from '../components/Analytics.astro';
+import JsonLd from '../components/JsonLd.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  noindex?: boolean;
+  jsonLd?: unknown[];
+}
+
+const { title, description, noindex = false, jsonLd = [] } = Astro.props;
+const ogTitle = Astro.props.ogTitle ?? title;
+const ogDescription = Astro.props.ogDescription ?? description;
+const canonical = pageUrl(Astro.url.pathname);
+const image = assetUrl(site.ogImagePath);
+const verification = site.gscVerification || GSC_PLACEHOLDER;
+const robots = noindex ? 'noindex, nofollow' : 'index, follow';
+---
+
+<!doctype html>
+<html lang={site.language}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#faf7f2" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+
+    <!-- TODO: replace with the verification code from Google Search Console -->
+    <meta name="google-site-verification" content={verification} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:alt" content={site.ogImageAlt} />
+    <meta property="og:image:width" content={String(site.ogImageWidth)} />
+    <meta property="og:image:height" content={String(site.ogImageHeight)} />
+    <meta property="og:locale" content={site.locale} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content={site.ogImageAlt} />
+
+    {jsonLd.length > 0 && <JsonLd data={jsonLd} />}
+  </head>
+  <body class="min-h-screen bg-paper font-sans text-base leading-7 text-ink antialiased">
+    <a
+      href="#content"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-ink focus:px-3 focus:py-2 focus:text-paper"
+    >
+      Skip to content
+    </a>
+    <Header />
+    <main id="content" class="mx-auto w-full max-w-5xl px-5 py-10 sm:px-8">
+      <slot />
+    </main>
+    <Footer />
+    <Analytics />
+  </body>
+</html>

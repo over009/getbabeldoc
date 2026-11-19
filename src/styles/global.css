@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #faf7f2;
+  --color-ink: #1c1917;
+  --color-muted: #44403c;
+  --color-line: #e4dcd0;
+  --color-accent: #7c2d12;
+  --color-soft: #f3ebe3;
+  --color-logo: #292524;
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-serif: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: #f0d2c2;
+  color: var(--color-ink);
+}
+
+/*
+ * Ad slots reserve their height only when ads are enabled.
+ * While disabled they stay hidden, so the empty site does not show blank gaps.
+ * The min-height is what prevents layout shift after the slots are turned on.
+ */
+.ad-slot[hidden] {
+  display: none !important;
+}
+
+.ad-slot-after-tool {
+  min-height: 90px;
+}
+
+.ad-slot-before-faq {
+  min-height: 250px;
+}
+
+.ad-slot-before-footer {
+  min-height: 90px;
+}
+
+@media (min-width: 768px) {
+  .ad-slot-after-tool {
+    min-height: 250px;
+  }
+}

@@ -1,0 +1,24 @@
+---
+import type { ToolDefinition } from '../data/registry';
+
+interface Props {
+  tool: ToolDefinition;
+  heading?: 'h2' | 'h3';
+}
+
+const { tool, heading = 'h3' } = Astro.props;
+const Heading = heading;
+---
+
+<article class="flex h-full flex-col gap-3 rounded-lg border border-line bg-white p-5">
+  <Heading class="font-serif text-xl text-ink">
+    <a class="underline-offset-4 hover:underline" href={`/tools/${tool.slug}/`}>{tool.name}</a>
+  </Heading>
+  <p class="text-sm leading-6 text-muted">{tool.cardBlurb}</p>
+  <a
+    class="mt-auto inline-flex w-fit items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink no-underline hover:bg-ink hover:text-paper"
+    href={`/tools/${tool.slug}/`}
+  >
+    {tool.buttonLabel}
+  </a>
+</article>

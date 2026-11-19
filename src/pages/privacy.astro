@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const title = 'Privacy Policy | BabelDoc';
+const description =
+  'Read how BabelDoc handles information. Current tools run in your browser, personal data is not sold, and analytics stay off until configured. Review the policy.';
+---
+
+<BaseLayout title={title} description={description} ogTitle="BabelDoc privacy policy">
+  <article class="max-w-3xl">
+    <h1 class="font-serif text-4xl leading-tight text-ink">Privacy Policy</h1>
+    <p class="mt-4 text-sm text-muted">Effective date: November 19, 2026</p>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Tools run in your browser</h2>
+      <p class="mt-3 leading-7">
+        The tools published now, including the word counter, process what you type in your browser. That text is not sent to BabelDoc and is not stored on a server by the tool.
+      </p>
+      <p class="mt-3 leading-7">
+        If a future tool needs a server, that tool’s page will say so, and this policy will be updated before that page goes live.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Information we do not sell</h2>
+      <p class="mt-3 leading-7">
+        BabelDoc does not sell personal information. The site does not ask you to create an account, and the tools do not ask for your name or email in order to work.
+      </p>
+      <p class="mt-3 leading-7">
+        If you email <a class="text-accent underline-offset-4 hover:underline" href="mailto:hello@getbabeldoc.com">hello@getbabeldoc.com</a>,
+        the message contains whatever you choose to send. It is used to read and answer that request, not added to a marketing list.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Cookies and analytics</h2>
+      <p class="mt-3 leading-7">
+        Google Analytics 4 is not loaded unless a measurement ID is set when the site is built. Until that happens, the pages do not include the analytics script.
+      </p>
+      <p class="mt-3 leading-7">
+        If analytics is turned on later, Google Analytics 4 may set cookies and receive usage data such as pages visited, approximate location derived from IP address, and device or browser details. It will not receive the text you type into a tool. You can block analytics cookies in your browser, or use the
+        <a class="text-accent underline-offset-4 hover:underline" href="https://tools.google.com/dlpage/gaoptout">Google Analytics opt-out add-on</a>.
+        Google describes its own handling in the
+        <a class="text-accent underline-offset-4 hover:underline" href="https://policies.google.com/privacy">Google Privacy Policy</a>.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Advertising</h2>
+      <p class="mt-3 leading-7">
+        The site does not run advertising scripts. Layout space is reserved for later, and those slots stay hidden. This policy will be updated before any ad script is added.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Privacy requests</h2>
+      <p class="mt-3 leading-7">
+        Email <a class="text-accent underline-offset-4 hover:underline" href="mailto:hello@getbabeldoc.com">hello@getbabeldoc.com</a>
+        for a privacy question. Messages are read. There is no promised reply time.
+      </p>
+    </section>
+
+    <section class="mt-8">
+      <h2 class="font-serif text-2xl text-ink">Changes</h2>
+      <p class="mt-3 leading-7">
+        This page will change when the site’s data practices change. The effective date at the top will move with it. Continued use of the site after a change means the updated policy applies.
+      </p>
+    </section>
+  </article>
+</BaseLayout>

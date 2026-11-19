@@ -1,0 +1,18 @@
+---
+import { site } from '../config';
+
+interface Props {
+  name: 'after-tool' | 'before-faq' | 'before-footer';
+}
+
+const { name } = Astro.props;
+const enabled = site.adsEnabled;
+---
+
+<div
+  class:list={['ad-slot', `ad-slot-${name}`, enabled && 'ad-slot-enabled']}
+  data-ad-slot={name}
+  data-ad-enabled={enabled ? 'true' : 'false'}
+  aria-hidden="true"
+  hidden={!enabled}
+></div>

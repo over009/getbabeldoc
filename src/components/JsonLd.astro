@@ -1,0 +1,12 @@
+---
+interface Props {
+  data: unknown[];
+}
+
+const { data } = Astro.props;
+const blocks = data.map((entry) => JSON.stringify(entry).replace(/</g, '\\u003c'));
+---
+
+{
+  blocks.map((json) => <script type="application/ld+json" set:html={json} />)
+}
