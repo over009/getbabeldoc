@@ -1,0 +1,359 @@
+---
+// Token counter. GPT encodings are loaded on demand from js-tiktoken.
+// Claude and Gemini stay on a characters / 4 estimate. Text is not uploaded.
+---
+
+<div data-token-counter class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <label for="token-model" class="block text-sm font-semibold">Model</label>
+  <select
+    id="token-model"
+    class="mt-2 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+  >
+    <optgroup label="Exact — OpenAI tokenizer">
+      <option value="o200k_base">GPT-4o, GPT-4.1, and o-series (o200k_base)</option>
+      <option value="cl100k_base">GPT-4 and GPT-3.5 (cl100k_base)</option>
+    </optgroup>
+    <optgroup label="Estimate — tokenizer not public">
+      <option value="claude">Claude (estimate)</option>
+      <option value="gemini">Gemini (estimate)</option>
+    </optgroup>
+  </select>
+  <p data-model-note class="mt-2 text-sm leading-6">
+    Exact. GPT-4o, GPT-4.1, and o-series use the public o200k_base tokenizer. It downloads when you first count text.
+  </p>
+  <p class="mt-2 text-sm leading-6">Your text never leaves this browser.</p>
+
+  <label for="token-counter-text" class="mt-4 block text-sm font-semibold">Your text</label>
+  <textarea
+    id="token-counter-text"
+    class="mt-2 min-h-48 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-7 text-ink"
+    rows="8"
+    placeholder="Paste or type the text you want to count."
+    autocomplete="off"
+    spellcheck="true"
+  ></textarea>
+  <div class="mt-3">
+    <button
+      type="button"
+      data-action="clear"
+      class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
+    >
+      Clear text
+    </button>
+  </div>
+  <p class="sr-only" data-count="summary" aria-live="polite"></p>
+  <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">
+        Tokens
+        <span
+          data-count="badge"
+          class="ml-1 inline-flex rounded border border-line px-1.5 py-0.5 align-middle text-[11px] tracking-wide normal-case"
+        >
+          Exact
+        </span>
+      </dt>
+      <dd data-count="tokens" class="font-serif text-2xl tabular-nums">0</dd>
+    </div>
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">Characters</dt>
+      <dd data-count="characters" class="font-serif text-2xl tabular-nums">0</dd>
+    </div>
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">Words</dt>
+      <dd data-count="words" class="font-serif text-2xl tabular-nums">0</dd>
+    </div>
+  </dl>
+  <p data-token-status class="mt-3 text-sm leading-6 text-accent" hidden></p>
+
+  <div class="mt-5 border-t border-line pt-4">
+    <p class="text-sm font-semibold" id="token-cost-heading">Cost estimate</p>
+    <label for="token-price" class="mt-2 block text-sm">Price per 1M tokens</label>
+    <input
+      id="token-price"
+      type="text"
+      inputmode="decimal"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Your price"
+      class="mt-1 w-full max-w-xs rounded-md border border-line bg-paper px-3 py-2 text-ink"
+    />
+    <p class="mt-2 text-sm leading-6 text-muted">
+      Uses the number you type. This page does not include a vendor price list. Input and output rates often differ, so run it once for each rate.
+    </p>
+    <p data-cost class="mt-2 text-sm leading-6">Enter a price per 1 million tokens to estimate cost.</p>
+  </div>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to count tokens. The guide and questions further down this page stay readable either way.
+    </p>
+  </noscript>
+</div>
+
+<script>
+  // Ranks stay behind dynamic import() so the first paint does not download them.
+  // js-tiktoken/lite is the browser entry; it does not bundle every encoding.
+  type RankTable = {
+    pat_str: string;
+    special_tokens: Record<string, number>;
+    bpe_ranks: string;
+  };
+
+  type Encoder = {
+    encode: (text: string, allowedSpecial?: 'all' | string[]) => number[];
+  };
+
+  type ExactEncoding = 'o200k_base' | 'cl100k_base';
+
+  const numberFormat = new Intl.NumberFormat('en-US');
+  const encoderPromises = new Map<ExactEncoding, Promise<Encoder>>();
+  const readyEncoders = new Map<ExactEncoding, Encoder>();
+
+  function countWords(text: string): number {
+    const trimmed = text.trim();
+    if (!trimmed) return 0;
+    return trimmed.split(/\s+/).length;
+  }
+
+  function countCharacters(text: string): number {
+    return Array.from(text).length;
+  }
+
+  function estimateTokens(characters: number): number {
+    if (characters <= 0) return 0;
+    return Math.ceil(characters / 4);
+  }
+
+  function parsePrice(raw: string): number | null | 'invalid' {
+    const cleaned = raw.trim().replace(/[$,]/g, '');
+    if (!cleaned) return null;
+    if (!/^\d+(\.\d+)?$/.test(cleaned)) return 'invalid';
+    const value = Number(cleaned);
+    if (!Number.isFinite(value) || value < 0 || value > 1_000_000_000) return 'invalid';
+    return value;
+  }
+
+  function formatCost(value: number): string {
+    const abs = Math.abs(value);
+    let maximumFractionDigits = 2;
+    if (abs > 0 && abs < 1) {
+      const decimals = Math.ceil(-Math.log10(abs)) + 2;
+      maximumFractionDigits = Math.min(8, Math.max(2, decimals));
+    }
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: abs >= 1 ? 2 : 0,
+      maximumFractionDigits,
+    }).format(value);
+  }
+
+  async function loadEncoder(encoding: ExactEncoding): Promise<Encoder> {
+    const [{ Tiktoken }, ranks] = await Promise.all([
+      import('js-tiktoken/lite'),
+      encoding === 'o200k_base'
+        ? import('js-tiktoken/ranks/o200k_base')
+        : import('js-tiktoken/ranks/cl100k_base'),
+    ]);
+    const table = ranks.default as RankTable;
+    return new Tiktoken(table);
+  }
+
+  function ensureEncoder(encoding: ExactEncoding): Promise<Encoder> {
+    const existing = encoderPromises.get(encoding);
+    if (existing) return existing;
+    const pending = loadEncoder(encoding)
+      .then((encoder) => {
+        readyEncoders.set(encoding, encoder);
+        return encoder;
+      })
+      .catch((error: unknown) => {
+        encoderPromises.delete(encoding);
+        throw error;
+      });
+    encoderPromises.set(encoding, pending);
+    return pending;
+  }
+
+  const notes: Record<string, { badge: 'Exact' | 'Estimate'; text: string }> = {
+    o200k_base: {
+      badge: 'Exact',
+      text: 'Exact. GPT-4o, GPT-4.1, and o-series use the public o200k_base tokenizer. It downloads when you first count text.',
+    },
+    cl100k_base: {
+      badge: 'Exact',
+      text: 'Exact. GPT-4 and GPT-3.5, including GPT-4 Turbo, use the public cl100k_base tokenizer. It downloads when you first count text.',
+    },
+    claude: {
+      badge: 'Estimate',
+      text: 'Estimate. Claude’s tokenizer is not public. This number is the character count divided by 4, rounded up. It is not an official Claude count.',
+    },
+    gemini: {
+      badge: 'Estimate',
+      text: 'Estimate. Gemini’s tokenizer is not public. This number is the character count divided by 4, rounded up. It is not an official Gemini count.',
+    },
+  };
+
+  const roots = document.querySelectorAll('[data-token-counter]');
+
+  for (const root of roots) {
+    const model = root.querySelector('#token-model');
+    const input = root.querySelector('textarea');
+    const price = root.querySelector('#token-price');
+    const note = root.querySelector('[data-model-note]');
+    const summary = root.querySelector('[data-count="summary"]');
+    const badge = root.querySelector('[data-count="badge"]');
+    const tokenOut = root.querySelector('[data-count="tokens"]');
+    const characterOut = root.querySelector('[data-count="characters"]');
+    const wordOut = root.querySelector('[data-count="words"]');
+    const status = root.querySelector('[data-token-status]');
+    const cost = root.querySelector('[data-cost]');
+    if (
+      !(model instanceof HTMLSelectElement) ||
+      !(input instanceof HTMLTextAreaElement) ||
+      !(price instanceof HTMLInputElement) ||
+      !(note instanceof HTMLElement) ||
+      !(summary instanceof HTMLElement) ||
+      !(badge instanceof HTMLElement) ||
+      !(tokenOut instanceof HTMLElement) ||
+      !(characterOut instanceof HTMLElement) ||
+      !(wordOut instanceof HTMLElement) ||
+      !(status instanceof HTMLElement) ||
+      !(cost instanceof HTMLElement)
+    ) {
+      continue;
+    }
+
+    let request = 0;
+    let timer = 0;
+    let latestTokens: number | null = 0;
+    let tokenPending = false;
+
+    const write = (node: HTMLElement, value: string) => {
+      node.textContent = value;
+    };
+
+    const renderCost = () => {
+      const parsed = parsePrice(price.value);
+      if (parsed === 'invalid') {
+        write(cost, 'Enter a plain number for the price, such as 2.5 or 0.15.');
+        return;
+      }
+      if (parsed === null) {
+        write(cost, 'Enter a price per 1 million tokens to estimate cost.');
+        return;
+      }
+      if (tokenPending || latestTokens === null) {
+        write(cost, 'Cost updates when the token count is ready.');
+        return;
+      }
+      const amount = (latestTokens / 1_000_000) * parsed;
+      write(
+        cost,
+        `${numberFormat.format(latestTokens)} tokens × ${numberFormat.format(parsed)} per 1M = ${formatCost(amount)}.`,
+      );
+    };
+
+    const showStatus = (message: string) => {
+      if (!message) {
+        status.hidden = true;
+        status.textContent = '';
+        return;
+      }
+      status.hidden = false;
+      status.textContent = message;
+    };
+
+    const publish = (tokens: number, badgeLabel: 'Exact' | 'Estimate', words: number, characters: number) => {
+      tokenPending = false;
+      latestTokens = tokens;
+      write(tokenOut, numberFormat.format(tokens));
+      write(badge, badgeLabel);
+      badge.classList.toggle('bg-soft', badgeLabel === 'Estimate');
+      const modeWord = badgeLabel === 'Exact' ? 'Exact' : 'Estimate';
+      write(
+        summary,
+        `${modeWord}. ${tokens} tokens, ${characters} characters, ${words} words.`,
+      );
+      showStatus('');
+      renderCost();
+    };
+
+    const schedule = () => {
+      const id = ++request;
+      window.clearTimeout(timer);
+      const text = input.value;
+      const words = countWords(text);
+      const characters = countCharacters(text);
+      const selected = notes[model.value] ?? notes.o200k_base;
+      write(wordOut, numberFormat.format(words));
+      write(characterOut, numberFormat.format(characters));
+      write(note, selected.text);
+      note.classList.toggle('rounded-md', selected.badge === 'Estimate');
+      note.classList.toggle('border', selected.badge === 'Estimate');
+      note.classList.toggle('border-line', selected.badge === 'Estimate');
+      note.classList.toggle('bg-soft', selected.badge === 'Estimate');
+      note.classList.toggle('px-3', selected.badge === 'Estimate');
+      note.classList.toggle('py-2', selected.badge === 'Estimate');
+      write(badge, selected.badge);
+      badge.classList.toggle('bg-soft', selected.badge === 'Estimate');
+
+      if (selected.badge === 'Estimate' || text.length === 0) {
+        publish(selected.badge === 'Estimate' ? estimateTokens(characters) : 0, selected.badge, words, characters);
+        return;
+      }
+
+      const encoding: ExactEncoding = model.value === 'cl100k_base' ? 'cl100k_base' : 'o200k_base';
+      const cached = readyEncoders.get(encoding);
+
+      const applyEncoder = (encoder: Encoder) => {
+        if (id !== request) return;
+        try {
+          const tokens = encoder.encode(input.value, 'all').length;
+          const currentWords = countWords(input.value);
+          const currentCharacters = countCharacters(input.value);
+          publish(tokens, 'Exact', currentWords, currentCharacters);
+        } catch {
+          if (id !== request) return;
+          tokenPending = false;
+          latestTokens = null;
+          write(tokenOut, '—');
+          write(summary, 'This text could not be counted.');
+          showStatus('This text could not be counted. Try a smaller paste.');
+          renderCost();
+        }
+      };
+
+      if (cached) {
+        timer = window.setTimeout(() => applyEncoder(cached), 40);
+        return;
+      }
+
+      tokenPending = true;
+      latestTokens = null;
+      write(tokenOut, '…');
+      write(summary, 'Loading the OpenAI tokenizer.');
+      showStatus('Loading the OpenAI tokenizer…');
+      renderCost();
+      void ensureEncoder(encoding)
+        .then((encoder) => applyEncoder(encoder))
+        .catch(() => {
+          if (id !== request) return;
+          tokenPending = false;
+          latestTokens = null;
+          write(tokenOut, '—');
+          write(summary, 'The tokenizer could not be loaded.');
+          showStatus('The tokenizer could not be loaded. Check your connection and edit the text to try again.');
+          renderCost();
+        });
+    };
+
+    input.addEventListener('input', schedule);
+    model.addEventListener('change', schedule);
+    price.addEventListener('input', renderCost);
+    root.querySelector('[data-action="clear"]')?.addEventListener('click', () => {
+      input.value = '';
+      schedule();
+      input.focus();
+    });
+    schedule();
+  }
+</script>

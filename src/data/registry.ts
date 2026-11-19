@@ -1,4 +1,6 @@
 import WordCounter from '../tools/word-counter.astro';
+import TokenCounter from '../tools/token-counter.astro';
+import SuperBowlSquares from '../tools/super-bowl-squares-generator.astro';
 
 /**
  * Tool registry.
@@ -15,7 +17,12 @@ export const categories = [
   {
     id: 'text',
     name: 'Text',
-    description: 'Count and review writing without leaving the browser.',
+    description: 'Count words, characters, and model tokens without leaving the browser.',
+  },
+  {
+    id: 'events',
+    name: 'Events',
+    description: 'Printable sheets for parties, pools, and fundraisers.',
   },
 ] as const;
 
@@ -54,7 +61,7 @@ export interface ToolDefinition {
   related: string[];
   added: string;
   browserRequirements: string;
-  component: typeof WordCounter;
+  component: typeof WordCounter | typeof TokenCounter | typeof SuperBowlSquares;
 }
 
 export const tools: ToolDefinition[] = [
@@ -124,6 +131,7 @@ export const tools: ToolDefinition[] = [
         heading: 'What this counter does not do',
         paragraphs: [
           'It does not apply a style guide. School assignments, APA papers, and publishers sometimes count hyphenated compounds in their own way. If an exact number will be graded or paid, confirm it in the editor that submits the work.',
+          'It does not count tokens for a language model. The token counter does that: an exact OpenAI tokenizer for GPT models, and a labeled estimate for Claude and Gemini.',
           'It does not store a history, export a file, or check grammar. There is no character cap in the tool. A very long paste stays on your device, but it can make the tab feel slow because the count runs on each change.',
         ],
       },
@@ -177,11 +185,235 @@ export const tools: ToolDefinition[] = [
           'Yes. The box and the totals fit a narrow screen. JavaScript has to be enabled for the numbers to update. The explanation and the questions on this page are still there if it is not.',
       },
     ],
-    related: [],
+    related: ['token-counter'],
     added: '2026-11-19',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to update the counts. The guide on the page is available without JavaScript.',
     component: WordCounter,
+  },
+  {
+    slug: 'token-counter',
+    name: 'Token Counter',
+    h1: 'Token Counter',
+    title: 'Token Counter — GPT, Claude, and Gemini | BabelDoc',
+    description:
+      'Count GPT tokens with the public OpenAI tokenizer, and estimate Claude or Gemini tokens. Type a price per million tokens. Your text stays in this browser.',
+    ogTitle: 'Token counter for GPT, Claude, and Gemini',
+    category: 'text',
+    cardBlurb: 'Count GPT tokens exactly, and estimate Claude and Gemini tokens.',
+    buttonLabel: 'Count tokens',
+    intro:
+      'Paste text and see tokens, characters, and words update as you type. GPT-4o, GPT-4.1, and o-series models use OpenAI’s o200k_base tokenizer. GPT-4 and GPT-3.5 use cl100k_base. Claude and Gemini are estimates, because their tokenizers are not public. Your text never leaves this browser.',
+    disclaimer:
+      'GPT counts use the tokenizer named on the page. Claude and Gemini figures are estimates, not a vendor bill. A chat API can add tokens for message framing that are not in the box. Your text stays in this browser.',
+    howToTitle: 'How to use this token counter',
+    howTo: [
+      'Choose a model. GPT-4o, GPT-4.1, and o-series share one OpenAI tokenizer. GPT-4 and GPT-3.5 share another. Claude and Gemini stay on the estimate.',
+      'Paste or type your text. Tokens, characters, and words update as you type.',
+      'Read the badge next to Tokens. Exact means the OpenAI tokenizer ran in your browser. Estimate means a character rule of thumb.',
+      'To price a call, type what you pay per 1 million tokens. The page does not keep a price list.',
+      'Press Clear text to empty the box. This page does not save what you pasted.',
+    ],
+    sections: [
+      {
+        heading: 'What a token is',
+        paragraphs: [
+          'A token is a chunk of text a model reads. It is not always a word. Common words are often one token. Longer or less common words are split. Spaces and punctuation are part of the count.',
+          'The model does not see letters one by one. A tokenizer turns the text into a list of ids, and the length of that list is the token count. “ChatGPT” is 3 tokens with the GPT-4 tokenizer and 2 tokens with the GPT-4o tokenizer. “hello world” is 2 tokens on both, and 11 characters.',
+        ],
+      },
+      {
+        heading: 'Why the same text can have different counts',
+        paragraphs: [
+          'Each model family has its own vocabulary. GPT-4o, GPT-4.1, and o-series models use the public encoding named o200k_base. GPT-4 and GPT-3.5, including GPT-4 Turbo, use cl100k_base. This page loads only the encoding you pick, and only after you type, so the first visit stays lighter.',
+          'Those two counts are exact for the text in the box. They match the public OpenAI tokenizer. They do not add the extra tokens an API request uses for roles, tools, or a system message you did not paste.',
+          'Claude and Gemini are separate products. Their tokenizers have not been published, so this page does not pretend to run them. The Claude and Gemini choices are a local estimate for when you want a rough LLM token count before you open the vendor’s own usage page.',
+        ],
+      },
+      {
+        heading: 'How the estimate is calculated',
+        paragraphs: [
+          'Characters are Unicode code points, the same rule as the character total and the word counter. A single emoji such as “😀” is one character. The estimate is zero when the box is empty. Otherwise it is the character count divided by 4, rounded up.',
+          '“hello world” is 11 characters, so the estimate is 3 tokens. The exact GPT count for that phrase is 2. Code, emoji, and many languages other than English can land far from the guess. An emoji can be one character and several tokens, so the estimate can be low. The number is marked Estimate whenever Claude or Gemini is selected.',
+        ],
+      },
+      {
+        heading: 'How cost is estimated',
+        paragraphs: [
+          'Type a price per 1 million tokens. Cost equals the token count divided by 1,000,000, then multiplied by that price. The page does not store OpenAI, Anthropic, or Google prices, because they change and they differ for input and output.',
+          'If you are pricing a reply, count the prompt and the completion separately and type the rate that applies to each. The box holds one price at a time.',
+        ],
+      },
+      {
+        heading: 'What this counter does not do',
+        paragraphs: [
+          'It does not call an API, log the text, or save a draft. Closing the tab clears the box.',
+          'It does not count images, audio, or uploaded files. Paste the text you want measured. It also does not apply cached-input discounts or batch rates. Type the price you actually want to use.',
+          'Word and character totals follow the same splitting rules as the word counter. Use that page when you want sentences, paragraphs, and a reading time instead of tokens.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'The text never leaves your browser. The tokenizer file downloads to your device only if you pick a GPT model and there is text to count. BabelDoc does not receive the contents of the box.',
+          'If analytics is on, it measures the visit, not the text. The privacy policy describes the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is my text uploaded?',
+        answer:
+          'No. The token counter runs in your browser. The text is not sent to BabelDoc and is not saved by this page.',
+      },
+      {
+        question: 'Which GPT models are exact?',
+        answer:
+          'GPT-4o, GPT-4.1, and o-series models are counted with o200k_base. GPT-4 and GPT-3.5, including GPT-4 Turbo, are counted with cl100k_base. Both use the public OpenAI tokenizer, loaded in your browser.',
+      },
+      {
+        question: 'Why are Claude and Gemini estimates?',
+        answer:
+          'Anthropic and Google have not published the Claude and Gemini tokenizers. This page divides the character count by 4, rounds up, and labels the result Estimate so it is not mistaken for an official count.',
+      },
+      {
+        question: 'Why does the count change when I switch models?',
+        answer:
+          'The vocabularies are different. o200k_base is larger than cl100k_base, so the same sentence can be fewer tokens. “ChatGPT” is one example: 3 tokens on cl100k_base and 2 on o200k_base. Claude and Gemini use a different method entirely.',
+      },
+      {
+        question: 'Will this match my API bill?',
+        answer:
+          'For GPT models, the box matches the tokenizer for the text you pasted. The API bill can be higher because the request adds framing you do not see, such as role labels. Do not check a Claude or Gemini bill against this estimate.',
+      },
+      {
+        question: 'What price should I enter?',
+        answer:
+          'Use the price from your own account, per 1 million tokens. Input and output prices are often different. This page does not ship a vendor price list.',
+      },
+      {
+        question: 'Is a word the same as a token?',
+        answer:
+          'No. The word total splits on whitespace, the same rule as the word counter. A token follows a model vocabulary, so one word can be one token or several. Use the word counter when you only need words, sentences, and a reading time.',
+      },
+    ],
+    related: ['word-counter'],
+    added: '2026-11-19',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to update the counts. The OpenAI tokenizer downloads only when you count text with a GPT model. The guide on the page is available without JavaScript.',
+    component: TokenCounter,
+  },
+  {
+    slug: 'super-bowl-squares-generator',
+    name: 'Super Bowl Squares Generator',
+    h1: 'Super Bowl Squares Generator',
+    title: 'Super Bowl Squares Generator — Printable Sheet | BabelDoc',
+    description:
+      'Make a free printable Super Bowl squares template with names, random numbers, and a fundraiser pot. Share a link, or print the sheet and save it as a PDF.',
+    ogTitle: 'Printable Super Bowl squares with names, numbers, and a pot',
+    category: 'events',
+    cardBlurb: 'Fill a 10 by 10 squares sheet, shuffle the numbers, and print it.',
+    buttonLabel: 'Make a sheet',
+    intro:
+      'Set the two side names, type a name into each square, or paste a list and fill the empty squares. Shuffle the digits 0 through 9 when the group is ready to draw. Add a price if you are collecting for a fundraiser. You can share a link, print the sheet, or save it as a PDF. It is an unofficial pool sheet.',
+    disclaimer:
+      'This is an unofficial squares sheet for a private pool. It is not affiliated with the NFL, the teams, or the game, and it does not use their logos. Check the rules where you live before you collect money. Names stay in this browser unless you copy the share link yourself.',
+    howToTitle: 'How to use this squares generator',
+    howTo: [
+      'Rename the two sides if you want. They start as AFC and NFC. The labels are plain text, and you can change them.',
+      'Click a square and type a name, or paste one name per line and fill the empty squares in order or at random.',
+      'Set a price per square and the share for Q1, half, Q3, and the final score. The pot updates from those figures.',
+      'Press Randomize numbers when the group is ready to draw. Each side gets the digits 0 through 9 in a new order. Every digit is used once.',
+      'Press Copy share link when you want to send the sheet. The link stores it in the address hash, not on a server. This browser also keeps a copy after you edit.',
+      'Press Print / Save as PDF. In the print dialog, choose a printer or Save as PDF. The dialog belongs to your browser.',
+    ],
+    sections: [
+      {
+        heading: 'How Super Bowl squares work',
+        paragraphs: [
+          'A squares sheet is a 10 by 10 grid, 100 squares in all. People take squares before the game, usually by writing a name in each one they buy. The digits on the top and the side are a shuffled set of 0 through 9. They stand for the last digit of each side’s score, not the full score.',
+          'The across name is the columns. The down name is the rows. If the across side has 17 and the down side has 24, the square in column 7 and row 4 wins that period. You can rename the sides. The 2027 game is in February. This page does not list a kickoff date or a stadium.',
+        ],
+      },
+      {
+        heading: 'How to run a pool',
+        paragraphs: [
+          'Agree on the price and the payout split before anyone pays. A common split is even quarters, or a larger share for the final score. Type those numbers and the page multiplies them by the pot. The full-sheet pot is the price times 100. The current pot is the price times the number of squares that already have a name.',
+          'Let people pick squares, or paste the list and assign the empty squares at random. Draw the numbers only when you said you would. Many groups wait until the grid is full so nobody can chase a digit. You can shuffle both sides together, or one side at a time.',
+          'Share the link so everyone sees the same names and digits. Print a copy for the party. The sheet on this device is saved locally, so a refresh keeps your latest edits unless you opened someone else’s link and have not changed it yet.',
+        ],
+      },
+      {
+        heading: 'How winners are decided',
+        paragraphs: [
+          'After each scoring period, take the last digit of each side’s score and find that column and row. Q1 uses the score at the end of the first quarter. Half uses the score at halftime. Q3 uses the score at the end of the third quarter. Final uses the score at the end of the game.',
+          'The same square can win more than one period. A blank square has no name on it. Decide in advance whether that prize rolls over, is redrawn, or stays with the host. Overtime is a house rule too. Many pools fold overtime into the final score. Write the choice down before kickoff. This page does not pick a winner for you. It only builds the grid.',
+        ],
+      },
+      {
+        heading: 'Printing and the share link',
+        paragraphs: [
+          'Print / Save as PDF opens the browser’s print dialog. Choose a printer, or choose Save as PDF, to keep a file. Nothing is uploaded. The printed page hides the editing controls and keeps the grid, the side names, and the pot.',
+          'The share link holds the sheet in the URL hash. A hash is not sent to BabelDoc with the page request. Anyone you send the link to can read the names and numbers, because that is what the link is for. Do not put anything in a square that you would not hand to that person on paper.',
+        ],
+      },
+      {
+        heading: 'What this sheet does not do',
+        paragraphs: [
+          'It does not take payments, track who has paid, or connect to a score feed. You read the score and match the last digits yourself.',
+          'It does not store the sheet on a BabelDoc server. Your browser keeps a copy in local storage for this site. A different browser, or cleared site storage, will not have it. The share link is how you move the sheet to someone else.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'Names you type are saved in local storage on this device after you edit the sheet. They are not sent to BabelDoc. Creating a share link puts those names in the address bar. Copy that link only when you want someone else to see the sheet.',
+          'Analytics, when it is running, records the page without the hash, so the names in a share link are not part of the analytics address. The privacy policy has the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is this an official NFL sheet?',
+        answer:
+          'No. It is an unofficial generator for a private pool. It is not affiliated with the NFL or the game, and it does not use league or team logos. The side names are editable text. They start as AFC and NFC so the grid has labels.',
+      },
+      {
+        question: 'When is the 2027 game?',
+        answer:
+          'The 2027 game is in February. This page does not give a day or a venue. Print the sheet whenever your group is ready, and draw the numbers on the schedule you agreed to.',
+      },
+      {
+        question: 'How do the random numbers work?',
+        answer:
+          'Each side gets a shuffle of the digits 0 through 9. Every digit appears once on that side. The shuffle uses the browser’s cryptographic random numbers. Shuffle again only if you have not revealed the draw yet. Do not reshuffle after people have started playing to those digits.',
+      },
+      {
+        question: 'Can I print the grid or save a PDF?',
+        answer:
+          'Yes. Press Print / Save as PDF. In the dialog, pick a printer or Save as PDF. The grid is laid out for a paper page. On a phone, the system print sheet is the same control.',
+      },
+      {
+        question: 'Does the share link upload the names?',
+        answer:
+          'No. The link stores the sheet in the URL hash on your device. BabelDoc does not keep a copy. Sending the link shows the recipient the names, the digits, the price, and the payout split. This page also saves your edits in local storage in this browser.',
+      },
+      {
+        question: 'What if the quarter shares do not add up to 100%?',
+        answer:
+          'The page still multiplies each share by the full-sheet pot and shows the total of the four percentages. Change the four numbers if you wanted them to use the whole pot. An empty box counts as zero. Amounts are rounded to the nearest hundredth.',
+      },
+      {
+        question: 'Can two people share one square?',
+        answer:
+          'The grid has one line per square. Type both names in that line, such as “Sam and Jo”, if they are splitting the cost. There is no second layer of squares.',
+      },
+    ],
+    related: [],
+    added: '2026-11-19',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to shuffle numbers, calculate the pot, share a link, and save the sheet on this device. You can still read the guide without JavaScript. Printing uses the browser print dialog.',
+    component: SuperBowlSquares,
   },
 ];
 
