@@ -1,25 +1,20 @@
 ---
-// Token counter. GPT encodings are loaded on demand from js-tiktoken.
-// Claude and Gemini stay on a characters / 4 estimate. Text is not uploaded.
+// Token counter. GPT, Claude, and Gemini share one character estimate.
+// Text and chosen files stay in the browser.
 ---
 
 <div data-token-counter class="rounded-lg border border-line bg-white p-4 sm:p-5">
-  <label for="token-model" class="block text-sm font-semibold">Model</label>
+  <label for="token-family" class="block text-sm font-semibold">Family</label>
   <select
-    id="token-model"
+    id="token-family"
     class="mt-2 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
   >
-    <optgroup label="Exact — OpenAI tokenizer">
-      <option value="o200k_base">GPT-4o, GPT-4.1, and o-series (o200k_base)</option>
-      <option value="cl100k_base">GPT-4 and GPT-3.5 (cl100k_base)</option>
-    </optgroup>
-    <optgroup label="Estimate — tokenizer not public">
-      <option value="claude">Claude (estimate)</option>
-      <option value="gemini">Gemini (estimate)</option>
-    </optgroup>
+    <option value="gpt">GPT</option>
+    <option value="claude">Claude</option>
+    <option value="gemini">Gemini</option>
   </select>
-  <p data-model-note class="mt-2 text-sm leading-6">
-    Exact. GPT-4o, GPT-4.1, and o-series use the public o200k_base tokenizer. It downloads when you first count text.
+  <p data-model-note class="mt-2 rounded-md border border-line bg-soft px-3 py-2 text-sm leading-6">
+    Estimate for GPT. The same rule is used for every family: about 4 characters per token, rounded up. Switching family does not change the token number. This is not a certified count for every current or future model.
   </p>
   <p class="mt-2 text-sm leading-6">Your text never leaves this browser. A file you open is read here too, and is not uploaded.</p>
 
@@ -70,9 +65,9 @@
         Tokens
         <span
           data-count="badge"
-          class="ml-1 inline-flex rounded border border-line px-1.5 py-0.5 align-middle text-[11px] tracking-wide normal-case"
+          class="ml-1 inline-flex rounded border border-line bg-soft px-1.5 py-0.5 align-middle text-[11px] tracking-wide normal-case"
         >
-          Exact
+          Estimate
         </span>
       </dt>
       <dd data-count="tokens" class="font-serif text-2xl tabular-nums">0</dd>
@@ -113,23 +108,17 @@
 </div>
 
 <script>
-  // Ranks stay behind dynamic import() so the first paint does not download them.
-  // js-tiktoken/lite is the browser entry; it does not bundle every encoding.
-  type RankTable = {
-    pat_str: string;
-    special_tokens: Record<string, number>;
-    bpe_ranks: string;
-  };
-
-  type Encoder = {
-    encode: (text: string, allowedSpecial?: 'all' | string[]) => number[];
-  };
-
-  type ExactEncoding = 'o200k_base' | 'cl100k_base';
-
   const numberFormat = new Intl.NumberFormat('en-US');
-  const encoderPromises = new Map<ExactEncoding, Promise<Encoder>>();
-  const readyEncoders = new Map<ExactEncoding, Encoder>();
+  const familyLabels: Record<string, string> = {
+    gpt: 'GPT',
+    claude: 'Claude',
+    gemini: 'Gemini',
+  };
+
+  function familyNote(value: string): string {
+    const name = familyLabels[value] ?? 'GPT';
+    return `Estimate for ${name}. The same rule is used for every family: about 4 characters per token, rounded up. Switching family does not change the token number. This is not a certified count for every current or future model.`;
+  }
   const maxFileBytes = 5 * 1024 * 1024;
   const textExtensions = new Set([
     'txt', 'md', 'markdown', 'csv', 'tsv', 'json', 'jsonl', 'ndjson', 'xml', 'yaml', 'yml',
@@ -245,56 +234,10 @@
     }).format(value);
   }
 
-  async function loadEncoder(encoding: ExactEncoding): Promise<Encoder> {
-    const [{ Tiktoken }, ranks] = await Promise.all([
-      import('js-tiktoken/lite'),
-      encoding === 'o200k_base'
-        ? import('js-tiktoken/ranks/o200k_base')
-        : import('js-tiktoken/ranks/cl100k_base'),
-    ]);
-    const table = ranks.default as RankTable;
-    return new Tiktoken(table);
-  }
-
-  function ensureEncoder(encoding: ExactEncoding): Promise<Encoder> {
-    const existing = encoderPromises.get(encoding);
-    if (existing) return existing;
-    const pending = loadEncoder(encoding)
-      .then((encoder) => {
-        readyEncoders.set(encoding, encoder);
-        return encoder;
-      })
-      .catch((error: unknown) => {
-        encoderPromises.delete(encoding);
-        throw error;
-      });
-    encoderPromises.set(encoding, pending);
-    return pending;
-  }
-
-  const notes: Record<string, { badge: 'Exact' | 'Estimate'; text: string }> = {
-    o200k_base: {
-      badge: 'Exact',
-      text: 'Exact. GPT-4o, GPT-4.1, and o-series use the public o200k_base tokenizer. It downloads when you first count text.',
-    },
-    cl100k_base: {
-      badge: 'Exact',
-      text: 'Exact. GPT-4 and GPT-3.5, including GPT-4 Turbo, use the public cl100k_base tokenizer. It downloads when you first count text.',
-    },
-    claude: {
-      badge: 'Estimate',
-      text: 'Estimate. Claude’s tokenizer is not public. This number is the character count divided by 4, rounded up. It is not an official Claude count.',
-    },
-    gemini: {
-      badge: 'Estimate',
-      text: 'Estimate. Gemini’s tokenizer is not public. This number is the character count divided by 4, rounded up. It is not an official Gemini count.',
-    },
-  };
-
   const roots = document.querySelectorAll('[data-token-counter]');
 
   for (const root of roots) {
-    const model = root.querySelector('#token-model');
+    const model = root.querySelector('#token-family');
     const input = root.querySelector('textarea');
     const price = root.querySelector('#token-price');
     const note = root.querySelector('[data-model-note]');
@@ -353,7 +296,7 @@
       const amount = (latestTokens / 1_000_000) * parsed;
       write(
         cost,
-        `${numberFormat.format(latestTokens)} tokens × ${numberFormat.format(parsed)} per 1M = ${formatCost(amount)}.`,
+        `${numberFormat.format(latestTokens)} estimated tokens × ${numberFormat.format(parsed)} per 1M = ${formatCost(amount)}.`,
       );
     };
 
@@ -367,17 +310,12 @@
       status.textContent = message;
     };
 
-    const publish = (tokens: number, badgeLabel: 'Exact' | 'Estimate', words: number, characters: number) => {
+    const publish = (tokens: number, words: number, characters: number) => {
       tokenPending = false;
       latestTokens = tokens;
       write(tokenOut, numberFormat.format(tokens));
-      write(badge, badgeLabel);
-      badge.classList.toggle('bg-soft', badgeLabel === 'Estimate');
-      const modeWord = badgeLabel === 'Exact' ? 'Exact' : 'Estimate';
-      write(
-        summary,
-        `${modeWord}. ${tokens} tokens, ${characters} characters, ${words} words.`,
-      );
+      write(badge, 'Estimate');
+      write(summary, `Estimate. ${tokens} tokens, ${characters} characters, ${words} words.`);
       showStatus('');
       renderCost();
     };
@@ -385,16 +323,7 @@
     const schedule = () => {
       const id = ++request;
       window.clearTimeout(timer);
-      const selected = notes[model.value] ?? notes.o200k_base;
-      write(note, selected.text);
-      note.classList.toggle('rounded-md', selected.badge === 'Estimate');
-      note.classList.toggle('border', selected.badge === 'Estimate');
-      note.classList.toggle('border-line', selected.badge === 'Estimate');
-      note.classList.toggle('bg-soft', selected.badge === 'Estimate');
-      note.classList.toggle('px-3', selected.badge === 'Estimate');
-      note.classList.toggle('py-2', selected.badge === 'Estimate');
-      write(badge, selected.badge);
-      badge.classList.toggle('bg-soft', selected.badge === 'Estimate');
+      write(note, familyNote(model.value));
 
       const countNow = () => {
         if (id !== request) return;
@@ -403,66 +332,7 @@
         const characters = countCharacters(text);
         write(wordOut, numberFormat.format(words));
         write(characterOut, numberFormat.format(characters));
-
-        if (selected.badge === 'Estimate' || text.length === 0) {
-          publish(
-            selected.badge === 'Estimate' ? estimateTokens(characters) : 0,
-            selected.badge,
-            words,
-            characters,
-          );
-          return;
-        }
-
-        const encoding: ExactEncoding = model.value === 'cl100k_base' ? 'cl100k_base' : 'o200k_base';
-        const cached = readyEncoders.get(encoding);
-
-        const applyEncoder = (encoder: Encoder) => {
-          if (id !== request) return;
-          try {
-            const tokens = encoder.encode(text, 'all').length;
-            publish(tokens, 'Exact', words, characters);
-          } catch {
-            if (id !== request) return;
-            tokenPending = false;
-            latestTokens = null;
-            write(tokenOut, '—');
-            write(summary, 'This text could not be counted.');
-            showStatus('This text could not be counted. Try a smaller paste.');
-            renderCost();
-          }
-        };
-
-        if (cached) {
-          if (text.length > 50_000) {
-            timer = window.setTimeout(() => applyEncoder(cached), 0);
-          } else {
-            applyEncoder(cached);
-          }
-          return;
-        }
-
-        tokenPending = true;
-        latestTokens = null;
-        write(tokenOut, '…');
-        write(summary, 'Loading the OpenAI tokenizer.');
-        showStatus('Loading the OpenAI tokenizer…');
-        renderCost();
-        void ensureEncoder(encoding)
-          .then((encoder) => {
-            if (id !== request) return;
-            window.clearTimeout(timer);
-            timer = window.setTimeout(() => applyEncoder(encoder), countDelay(input.value.length));
-          })
-          .catch(() => {
-            if (id !== request) return;
-            tokenPending = false;
-            latestTokens = null;
-            write(tokenOut, '—');
-            write(summary, 'The tokenizer could not be loaded.');
-            showStatus('The tokenizer could not be loaded. Check your connection and edit the text to try again.');
-            renderCost();
-          });
+        publish(estimateTokens(characters), words, characters);
       };
 
       if (input.value.length > 50_000) {
@@ -474,28 +344,6 @@
         write(summary, 'Counting a large text.');
         showStatus('Counting… Large text waits a moment so the page can stay responsive.');
         renderCost();
-        timer = window.setTimeout(countNow, countDelay(input.value.length));
-        return;
-      }
-
-      const words = countWords(input.value);
-      const characters = countCharacters(input.value);
-      write(wordOut, numberFormat.format(words));
-      write(characterOut, numberFormat.format(characters));
-
-      if (selected.badge === 'Estimate' || input.value.length === 0) {
-        publish(
-          selected.badge === 'Estimate' ? estimateTokens(characters) : 0,
-          selected.badge,
-          words,
-          characters,
-        );
-        return;
-      }
-
-      const encoding: ExactEncoding = model.value === 'cl100k_base' ? 'cl100k_base' : 'o200k_base';
-      const cached = readyEncoders.get(encoding);
-      if (cached) {
         timer = window.setTimeout(countNow, countDelay(input.value.length));
         return;
       }
