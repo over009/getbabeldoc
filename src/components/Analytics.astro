@@ -16,7 +16,9 @@ const enabled = /^G-[A-Z0-9]+$/i.test(id);
         }
         window.gtag = gtag;
         gtag('js', new Date());
-        gtag('config', id);
+        gtag('config', id, {
+          page_location: location.origin + location.pathname + location.search,
+        });
       </script>
     </>
   )

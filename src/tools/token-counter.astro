@@ -1,0 +1,617 @@
+---
+// Token counter. GPT encodings are loaded on demand from js-tiktoken.
+// Claude and Gemini stay on a characters / 4 estimate. Text is not uploaded.
+---
+
+<div data-token-counter class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <label for="token-model" class="block text-sm font-semibold">Model</label>
+  <select
+    id="token-model"
+    class="mt-2 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+  >
+    <optgroup label="Exact — OpenAI tokenizer">
+      <option value="o200k_base">GPT-4o, GPT-4.1, and o-series (o200k_base)</option>
+      <option value="cl100k_base">GPT-4 and GPT-3.5 (cl100k_base)</option>
+    </optgroup>
+    <optgroup label="Estimate — tokenizer not public">
+      <option value="claude">Claude (estimate)</option>
+      <option value="gemini">Gemini (estimate)</option>
+    </optgroup>
+  </select>
+  <p data-model-note class="mt-2 text-sm leading-6">
+    Exact. GPT-4o, GPT-4.1, and o-series use the public o200k_base tokenizer. It downloads when you first count text.
+  </p>
+  <p class="mt-2 text-sm leading-6">Your text never leaves this browser. A file you open is read here too, and is not uploaded.</p>
+
+  <div class="mt-4 flex flex-wrap items-center gap-2">
+    <button
+      type="button"
+      data-action="upload"
+      class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
+    >
+      Upload file
+    </button>
+    <button
+      type="button"
+      data-action="clear"
+      class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
+    >
+      Clear text
+    </button>
+  </div>
+  <input
+    id="token-file"
+    class="sr-only"
+    type="file"
+    accept=".txt,.md,.markdown,.csv,.tsv,.json,.jsonl,.xml,.yaml,.yml,.html,.htm,.log,.js,.mjs,.cjs,.jsx,.ts,.tsx,.mts,.cts,.py,.pyi,.java,.go,.rs,.c,.h,.cpp,.cc,.cxx,.hpp,.hh,.rb,.php,.sql,.sh,.bash,.zsh,.css,.scss,.vue,.svelte,.kt,.kts,.swift,.cs,.lua,.r,.pl,.dart,.toml,.ini,.graphql,.gql"
+    aria-hidden="true"
+    tabindex="-1"
+  />
+  <p id="token-file-help" class="mt-2 text-sm leading-6 text-muted">
+    Drop a text or code file on the box, or use Upload file. PDF, Word, and other binary files are not supported yet. The limit is 5 MB.
+  </p>
+  <p data-file-meta class="mt-2 text-sm leading-6" hidden></p>
+  <p data-file-message class="mt-2 text-sm leading-6 text-accent" role="status" hidden></p>
+
+  <label for="token-counter-text" class="mt-4 block text-sm font-semibold">Your text</label>
+  <textarea
+    id="token-counter-text"
+    class="mt-2 min-h-48 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-7 text-ink"
+    rows="8"
+    placeholder="Paste, type, or drop a text file here."
+    aria-describedby="token-file-help"
+    autocomplete="off"
+    spellcheck="true"
+  ></textarea>
+  <p class="sr-only" data-count="summary" aria-live="polite"></p>
+  <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">
+        Tokens
+        <span
+          data-count="badge"
+          class="ml-1 inline-flex rounded border border-line px-1.5 py-0.5 align-middle text-[11px] tracking-wide normal-case"
+        >
+          Exact
+        </span>
+      </dt>
+      <dd data-count="tokens" class="font-serif text-2xl tabular-nums">0</dd>
+    </div>
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">Characters</dt>
+      <dd data-count="characters" class="font-serif text-2xl tabular-nums">0</dd>
+    </div>
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">Words</dt>
+      <dd data-count="words" class="font-serif text-2xl tabular-nums">0</dd>
+    </div>
+  </dl>
+  <p data-token-status class="mt-3 text-sm leading-6 text-accent" hidden></p>
+
+  <div class="mt-5 border-t border-line pt-4">
+    <p class="text-sm font-semibold" id="token-cost-heading">Cost estimate</p>
+    <label for="token-price" class="mt-2 block text-sm">Price per 1M tokens</label>
+    <input
+      id="token-price"
+      type="text"
+      inputmode="decimal"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Your price"
+      class="mt-1 w-full max-w-xs rounded-md border border-line bg-paper px-3 py-2 text-ink"
+    />
+    <p class="mt-2 text-sm leading-6 text-muted">
+      Uses the number you type. This page does not include a vendor price list. Input and output rates often differ, so run it once for each rate.
+    </p>
+    <p data-cost class="mt-2 text-sm leading-6">Enter a price per 1 million tokens to estimate cost.</p>
+  </div>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to count tokens and to open a file. The guide and questions further down this page stay readable either way.
+    </p>
+  </noscript>
+</div>
+
+<script>
+  // Ranks stay behind dynamic import() so the first paint does not download them.
+  // js-tiktoken/lite is the browser entry; it does not bundle every encoding.
+  type RankTable = {
+    pat_str: string;
+    special_tokens: Record<string, number>;
+    bpe_ranks: string;
+  };
+
+  type Encoder = {
+    encode: (text: string, allowedSpecial?: 'all' | string[]) => number[];
+  };
+
+  type ExactEncoding = 'o200k_base' | 'cl100k_base';
+
+  const numberFormat = new Intl.NumberFormat('en-US');
+  const encoderPromises = new Map<ExactEncoding, Promise<Encoder>>();
+  const readyEncoders = new Map<ExactEncoding, Encoder>();
+  const maxFileBytes = 5 * 1024 * 1024;
+  const textExtensions = new Set([
+    'txt', 'md', 'markdown', 'csv', 'tsv', 'json', 'jsonl', 'ndjson', 'xml', 'yaml', 'yml',
+    'html', 'htm', 'log', 'js', 'mjs', 'cjs', 'jsx', 'ts', 'tsx', 'mts', 'cts', 'py', 'pyi',
+    'java', 'go', 'rs', 'c', 'h', 'cpp', 'cc', 'cxx', 'hpp', 'hh', 'hxx', 'rb', 'php', 'sql',
+    'sh', 'bash', 'zsh', 'css', 'scss', 'less', 'vue', 'svelte', 'kt', 'kts', 'swift', 'cs',
+    'lua', 'r', 'pl', 'dart', 'toml', 'ini', 'cfg', 'conf', 'graphql', 'gql', 'env',
+  ]);
+
+  function fileExtension(name: string): string {
+    const base = name.split(/[/\\]/).pop() ?? name;
+    const dot = base.lastIndexOf('.');
+    if (dot <= 0) return '';
+    return base.slice(dot + 1).toLowerCase();
+  }
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) {
+      const kilobytes = bytes / 1024;
+      return `${kilobytes >= 10 ? kilobytes.toFixed(0) : kilobytes.toFixed(1)} KB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function countDelay(length: number): number {
+    if (length > 500_000) return 400;
+    if (length > 50_000) return 200;
+    return 40;
+  }
+
+  function isSpace(code: number): boolean {
+    return (
+      code === 0x20 ||
+      code === 0x09 ||
+      code === 0x0a ||
+      code === 0x0b ||
+      code === 0x0c ||
+      code === 0x0d ||
+      code === 0xa0 ||
+      code === 0x1680 ||
+      code === 0x2028 ||
+      code === 0x2029 ||
+      code === 0x202f ||
+      code === 0x205f ||
+      code === 0x3000 ||
+      code === 0xfeff ||
+      (code >= 0x2000 && code <= 0x200a)
+    );
+  }
+
+  function countWords(text: string): number {
+    let count = 0;
+    let inWord = false;
+    for (let index = 0; index < text.length; index++) {
+      if (isSpace(text.charCodeAt(index))) {
+        inWord = false;
+      } else if (!inWord) {
+        inWord = true;
+        count++;
+      }
+    }
+    return count;
+  }
+
+  function countCharacters(text: string): number {
+    let count = 0;
+    for (let index = 0; index < text.length; index++) {
+      const code = text.charCodeAt(index);
+      if (code >= 0xd800 && code <= 0xdbff && index + 1 < text.length) {
+        const next = text.charCodeAt(index + 1);
+        if (next >= 0xdc00 && next <= 0xdfff) index++;
+      }
+      count++;
+    }
+    return count;
+  }
+
+  function looksLikeBinaryText(text: string): boolean {
+    return (
+      text.includes('\u0000') ||
+      text.startsWith('%PDF') ||
+      text.startsWith('PK\u0003\u0004') ||
+      text.startsWith('PK\u0005\u0006') ||
+      text.startsWith('PK\u0007\u0008')
+    );
+  }
+
+  function estimateTokens(characters: number): number {
+    if (characters <= 0) return 0;
+    return Math.ceil(characters / 4);
+  }
+
+  function parsePrice(raw: string): number | null | 'invalid' {
+    const cleaned = raw.trim().replace(/[$,]/g, '');
+    if (!cleaned) return null;
+    if (!/^\d+(\.\d+)?$/.test(cleaned)) return 'invalid';
+    const value = Number(cleaned);
+    if (!Number.isFinite(value) || value < 0 || value > 1_000_000_000) return 'invalid';
+    return value;
+  }
+
+  function formatCost(value: number): string {
+    const abs = Math.abs(value);
+    let maximumFractionDigits = 2;
+    if (abs > 0 && abs < 1) {
+      const decimals = Math.ceil(-Math.log10(abs)) + 2;
+      maximumFractionDigits = Math.min(8, Math.max(2, decimals));
+    }
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: abs >= 1 ? 2 : 0,
+      maximumFractionDigits,
+    }).format(value);
+  }
+
+  async function loadEncoder(encoding: ExactEncoding): Promise<Encoder> {
+    const [{ Tiktoken }, ranks] = await Promise.all([
+      import('js-tiktoken/lite'),
+      encoding === 'o200k_base'
+        ? import('js-tiktoken/ranks/o200k_base')
+        : import('js-tiktoken/ranks/cl100k_base'),
+    ]);
+    const table = ranks.default as RankTable;
+    return new Tiktoken(table);
+  }
+
+  function ensureEncoder(encoding: ExactEncoding): Promise<Encoder> {
+    const existing = encoderPromises.get(encoding);
+    if (existing) return existing;
+    const pending = loadEncoder(encoding)
+      .then((encoder) => {
+        readyEncoders.set(encoding, encoder);
+        return encoder;
+      })
+      .catch((error: unknown) => {
+        encoderPromises.delete(encoding);
+        throw error;
+      });
+    encoderPromises.set(encoding, pending);
+    return pending;
+  }
+
+  const notes: Record<string, { badge: 'Exact' | 'Estimate'; text: string }> = {
+    o200k_base: {
+      badge: 'Exact',
+      text: 'Exact. GPT-4o, GPT-4.1, and o-series use the public o200k_base tokenizer. It downloads when you first count text.',
+    },
+    cl100k_base: {
+      badge: 'Exact',
+      text: 'Exact. GPT-4 and GPT-3.5, including GPT-4 Turbo, use the public cl100k_base tokenizer. It downloads when you first count text.',
+    },
+    claude: {
+      badge: 'Estimate',
+      text: 'Estimate. Claude’s tokenizer is not public. This number is the character count divided by 4, rounded up. It is not an official Claude count.',
+    },
+    gemini: {
+      badge: 'Estimate',
+      text: 'Estimate. Gemini’s tokenizer is not public. This number is the character count divided by 4, rounded up. It is not an official Gemini count.',
+    },
+  };
+
+  const roots = document.querySelectorAll('[data-token-counter]');
+
+  for (const root of roots) {
+    const model = root.querySelector('#token-model');
+    const input = root.querySelector('textarea');
+    const price = root.querySelector('#token-price');
+    const note = root.querySelector('[data-model-note]');
+    const summary = root.querySelector('[data-count="summary"]');
+    const badge = root.querySelector('[data-count="badge"]');
+    const tokenOut = root.querySelector('[data-count="tokens"]');
+    const characterOut = root.querySelector('[data-count="characters"]');
+    const wordOut = root.querySelector('[data-count="words"]');
+    const status = root.querySelector('[data-token-status]');
+    const cost = root.querySelector('[data-cost]');
+    const fileInput = root.querySelector('#token-file');
+    const fileMeta = root.querySelector('[data-file-meta]');
+    const fileMessage = root.querySelector('[data-file-message]');
+    if (
+      !(model instanceof HTMLSelectElement) ||
+      !(input instanceof HTMLTextAreaElement) ||
+      !(price instanceof HTMLInputElement) ||
+      !(note instanceof HTMLElement) ||
+      !(summary instanceof HTMLElement) ||
+      !(badge instanceof HTMLElement) ||
+      !(tokenOut instanceof HTMLElement) ||
+      !(characterOut instanceof HTMLElement) ||
+      !(wordOut instanceof HTMLElement) ||
+      !(status instanceof HTMLElement) ||
+      !(cost instanceof HTMLElement) ||
+      !(fileInput instanceof HTMLInputElement) ||
+      !(fileMeta instanceof HTMLElement) ||
+      !(fileMessage instanceof HTMLElement)
+    ) {
+      continue;
+    }
+
+    let request = 0;
+    let timer = 0;
+    let latestTokens: number | null = 0;
+    let tokenPending = false;
+
+    const write = (node: HTMLElement, value: string) => {
+      node.textContent = value;
+    };
+
+    const renderCost = () => {
+      const parsed = parsePrice(price.value);
+      if (parsed === 'invalid') {
+        write(cost, 'Enter a plain number for the price, such as 2.5 or 0.15.');
+        return;
+      }
+      if (parsed === null) {
+        write(cost, 'Enter a price per 1 million tokens to estimate cost.');
+        return;
+      }
+      if (tokenPending || latestTokens === null) {
+        write(cost, 'Cost updates when the token count is ready.');
+        return;
+      }
+      const amount = (latestTokens / 1_000_000) * parsed;
+      write(
+        cost,
+        `${numberFormat.format(latestTokens)} tokens × ${numberFormat.format(parsed)} per 1M = ${formatCost(amount)}.`,
+      );
+    };
+
+    const showStatus = (message: string) => {
+      if (!message) {
+        status.hidden = true;
+        status.textContent = '';
+        return;
+      }
+      status.hidden = false;
+      status.textContent = message;
+    };
+
+    const publish = (tokens: number, badgeLabel: 'Exact' | 'Estimate', words: number, characters: number) => {
+      tokenPending = false;
+      latestTokens = tokens;
+      write(tokenOut, numberFormat.format(tokens));
+      write(badge, badgeLabel);
+      badge.classList.toggle('bg-soft', badgeLabel === 'Estimate');
+      const modeWord = badgeLabel === 'Exact' ? 'Exact' : 'Estimate';
+      write(
+        summary,
+        `${modeWord}. ${tokens} tokens, ${characters} characters, ${words} words.`,
+      );
+      showStatus('');
+      renderCost();
+    };
+
+    const schedule = () => {
+      const id = ++request;
+      window.clearTimeout(timer);
+      const selected = notes[model.value] ?? notes.o200k_base;
+      write(note, selected.text);
+      note.classList.toggle('rounded-md', selected.badge === 'Estimate');
+      note.classList.toggle('border', selected.badge === 'Estimate');
+      note.classList.toggle('border-line', selected.badge === 'Estimate');
+      note.classList.toggle('bg-soft', selected.badge === 'Estimate');
+      note.classList.toggle('px-3', selected.badge === 'Estimate');
+      note.classList.toggle('py-2', selected.badge === 'Estimate');
+      write(badge, selected.badge);
+      badge.classList.toggle('bg-soft', selected.badge === 'Estimate');
+
+      const countNow = () => {
+        if (id !== request) return;
+        const text = input.value;
+        const words = countWords(text);
+        const characters = countCharacters(text);
+        write(wordOut, numberFormat.format(words));
+        write(characterOut, numberFormat.format(characters));
+
+        if (selected.badge === 'Estimate' || text.length === 0) {
+          publish(
+            selected.badge === 'Estimate' ? estimateTokens(characters) : 0,
+            selected.badge,
+            words,
+            characters,
+          );
+          return;
+        }
+
+        const encoding: ExactEncoding = model.value === 'cl100k_base' ? 'cl100k_base' : 'o200k_base';
+        const cached = readyEncoders.get(encoding);
+
+        const applyEncoder = (encoder: Encoder) => {
+          if (id !== request) return;
+          try {
+            const tokens = encoder.encode(text, 'all').length;
+            publish(tokens, 'Exact', words, characters);
+          } catch {
+            if (id !== request) return;
+            tokenPending = false;
+            latestTokens = null;
+            write(tokenOut, '—');
+            write(summary, 'This text could not be counted.');
+            showStatus('This text could not be counted. Try a smaller paste.');
+            renderCost();
+          }
+        };
+
+        if (cached) {
+          if (text.length > 50_000) {
+            timer = window.setTimeout(() => applyEncoder(cached), 0);
+          } else {
+            applyEncoder(cached);
+          }
+          return;
+        }
+
+        tokenPending = true;
+        latestTokens = null;
+        write(tokenOut, '…');
+        write(summary, 'Loading the OpenAI tokenizer.');
+        showStatus('Loading the OpenAI tokenizer…');
+        renderCost();
+        void ensureEncoder(encoding)
+          .then((encoder) => {
+            if (id !== request) return;
+            window.clearTimeout(timer);
+            timer = window.setTimeout(() => applyEncoder(encoder), countDelay(input.value.length));
+          })
+          .catch(() => {
+            if (id !== request) return;
+            tokenPending = false;
+            latestTokens = null;
+            write(tokenOut, '—');
+            write(summary, 'The tokenizer could not be loaded.');
+            showStatus('The tokenizer could not be loaded. Check your connection and edit the text to try again.');
+            renderCost();
+          });
+      };
+
+      if (input.value.length > 50_000) {
+        tokenPending = true;
+        latestTokens = null;
+        write(tokenOut, '…');
+        write(wordOut, '…');
+        write(characterOut, '…');
+        write(summary, 'Counting a large text.');
+        showStatus('Counting… Large text waits a moment so the page can stay responsive.');
+        renderCost();
+        timer = window.setTimeout(countNow, countDelay(input.value.length));
+        return;
+      }
+
+      const words = countWords(input.value);
+      const characters = countCharacters(input.value);
+      write(wordOut, numberFormat.format(words));
+      write(characterOut, numberFormat.format(characters));
+
+      if (selected.badge === 'Estimate' || input.value.length === 0) {
+        publish(
+          selected.badge === 'Estimate' ? estimateTokens(characters) : 0,
+          selected.badge,
+          words,
+          characters,
+        );
+        return;
+      }
+
+      const encoding: ExactEncoding = model.value === 'cl100k_base' ? 'cl100k_base' : 'o200k_base';
+      const cached = readyEncoders.get(encoding);
+      if (cached) {
+        timer = window.setTimeout(countNow, countDelay(input.value.length));
+        return;
+      }
+
+      countNow();
+    };
+
+    const showFileMessage = (message: string, tone: 'warn' | 'note' = 'warn') => {
+      if (!message) {
+        fileMessage.hidden = true;
+        fileMessage.textContent = '';
+        fileMessage.classList.remove('text-accent');
+        return;
+      }
+      fileMessage.hidden = false;
+      fileMessage.textContent = message;
+      fileMessage.classList.toggle('text-accent', tone === 'warn');
+    };
+
+    const clearFileMeta = () => {
+      fileMeta.hidden = true;
+      fileMeta.textContent = '';
+      fileInput.value = '';
+    };
+
+    const unsupportedMessage =
+      'PDF, Word, and other binary files aren’t supported yet. Choose a text or code file, such as .txt, .md, .json, or .py.';
+
+    const readFile = (file: File, extra = '') => {
+      if (file.size > maxFileBytes) {
+        showFileMessage(`This file is ${formatBytes(file.size)}. The limit is 5 MB, so it was not opened.`);
+        return;
+      }
+      if (!textExtensions.has(fileExtension(file.name))) {
+        showFileMessage(unsupportedMessage);
+        return;
+      }
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        const text = typeof reader.result === 'string' ? reader.result : '';
+        if (looksLikeBinaryText(text)) {
+          showFileMessage(unsupportedMessage);
+          return;
+        }
+        input.value = text;
+        fileMeta.hidden = false;
+        fileMeta.textContent = `${file.name} · ${formatBytes(file.size)}. Read in this browser and not uploaded.`;
+        showFileMessage(extra, 'note');
+        schedule();
+      });
+      reader.addEventListener('error', () => {
+        showFileMessage('This file could not be read. Try a different text file.');
+      });
+      reader.readAsText(file, 'UTF-8');
+    };
+
+    const setDropActive = (active: boolean) => {
+      input.classList.toggle('bg-soft', active);
+      input.classList.toggle('border-accent', active);
+    };
+
+    const draggingFiles = (transfer: DataTransfer | null) => {
+      if (!transfer) return false;
+      return Array.from(transfer.types).includes('Files');
+    };
+
+    document.addEventListener('dragover', (event) => {
+      if (!draggingFiles(event.dataTransfer)) return;
+      event.preventDefault();
+    });
+    document.addEventListener('drop', (event) => {
+      if (!draggingFiles(event.dataTransfer)) return;
+      event.preventDefault();
+    });
+
+    input.addEventListener('input', schedule);
+    model.addEventListener('change', schedule);
+    price.addEventListener('input', renderCost);
+    root.querySelector('[data-action="upload"]')?.addEventListener('click', () => {
+      fileInput.click();
+    });
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file) readFile(file);
+      fileInput.value = '';
+    });
+    root.querySelector('[data-action="clear"]')?.addEventListener('click', () => {
+      input.value = '';
+      clearFileMeta();
+      showFileMessage('');
+      schedule();
+      input.focus();
+    });
+
+    input.addEventListener('dragenter', (event) => {
+      if (!draggingFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      setDropActive(true);
+    });
+    input.addEventListener('dragover', (event) => {
+      if (!draggingFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      setDropActive(true);
+    });
+    input.addEventListener('dragleave', () => {
+      setDropActive(false);
+    });
+    input.addEventListener('drop', (event) => {
+      if (!event.dataTransfer) return;
+      event.preventDefault();
+      setDropActive(false);
+      const files = [...event.dataTransfer.files];
+      const file = files[0];
+      if (!file) return;
+      readFile(file, files.length > 1 ? 'Opened the first file only. Drop one file at a time.' : '');
+    });
+    schedule();
+  }
+</script>

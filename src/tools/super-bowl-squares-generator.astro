@@ -1,0 +1,755 @@
+---
+// Printable squares sheet. Names stay in this browser, or in a share link's hash.
+import { QUARTER_LABELS } from '../lib/squares-sheet';
+
+const indexes = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+---
+
+<div data-squares class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <p class="text-sm leading-6 text-muted">
+    Unofficial squares sheet for a private pool. Not affiliated with the NFL, the teams, or the game.
+  </p>
+
+  <div class="no-print mt-4 grid gap-3 sm:grid-cols-2">
+    <div>
+      <label for="squares-across" class="block text-sm font-semibold">Across (columns)</label>
+      <input
+        id="squares-across"
+        class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        type="text"
+        maxlength="40"
+        value="AFC"
+        data-team="across"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+    <div>
+      <label for="squares-down" class="block text-sm font-semibold">Down (rows)</label>
+      <input
+        id="squares-down"
+        class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        type="text"
+        maxlength="40"
+        value="NFC"
+        data-team="down"
+        autocomplete="off"
+        spellcheck="false"
+      />
+    </div>
+  </div>
+
+  <p class="only-print mt-4 text-center text-sm font-semibold">
+    Columns: <span data-print-across>AFC</span>. Rows: <span data-print-down>NFC</span>. Digits are the last number of each score.
+  </p>
+  <p class="no-print mt-3 text-sm leading-6 text-muted sm:hidden">Swipe sideways to see all 10 columns.</p>
+
+  <div class="squares-scroll mt-3 overflow-x-auto">
+    <table class="squares-table w-full min-w-[40rem] border-collapse">
+      <caption class="sr-only">
+        10 by 10 squares. Type a name in a square. Column digits belong to the across side. Row digits belong to the down side.
+      </caption>
+      <thead>
+        <tr>
+          <th class="border border-line bg-soft p-1" scope="col"><span class="sr-only">Row digit</span></th>
+          {
+            indexes.map((col) => (
+              <th
+                class="border border-line bg-soft px-1 py-2 text-center text-sm font-semibold tabular-nums"
+                scope="col"
+                data-col-digit
+              >
+                {col}
+              </th>
+            ))
+          }
+        </tr>
+      </thead>
+      <tbody>
+        {
+          indexes.map((row) => (
+            <tr>
+              <th
+                class="border border-line bg-soft px-2 py-1 text-center text-sm font-semibold tabular-nums"
+                scope="row"
+                data-row-digit
+              >
+                {row}
+              </th>
+              {indexes.map((col) => (
+                <td class="border border-line p-0 align-middle">
+                  <input
+                    class="square-field w-full min-h-11 bg-transparent px-1 py-1 text-center text-base leading-5 text-ink"
+                    type="text"
+                    maxlength="80"
+                    autocomplete="off"
+                    autocapitalize="words"
+                    spellcheck="false"
+                    data-square
+                    data-row={row}
+                    data-col={col}
+                    aria-label={`Row ${row}, column ${col}`}
+                  />
+                  <span class="square-print" data-print-name></span>
+                </td>
+              ))}
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="no-print mt-4 flex flex-wrap gap-2">
+    <button type="button" data-action="randomize-both" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Randomize numbers
+    </button>
+    <button type="button" data-action="randomize-rows" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Rows only
+    </button>
+    <button type="button" data-action="randomize-columns" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Columns only
+    </button>
+    <button type="button" data-action="reset-numbers" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Straight 0–9
+    </button>
+  </div>
+  <p class="no-print mt-2 text-sm leading-6 text-muted">
+    Each side gets each digit from 0 through 9 once. Shuffle when the group is ready for the draw.
+  </p>
+
+  <div class="no-print mt-6">
+    <label for="squares-paste" class="block text-sm font-semibold">Paste names</label>
+    <textarea
+      id="squares-paste"
+      class="mt-2 min-h-28 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-6 text-ink"
+      rows="4"
+      placeholder="One name per line"
+      data-role="paste"
+      autocomplete="off"
+      spellcheck="false"
+    ></textarea>
+    <p id="squares-paste-help" class="mt-2 text-sm leading-6 text-muted">
+      One name per line. A single comma-separated line works too. Names fill empty squares only.
+    </p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button type="button" data-action="fill-order" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Fill empty squares
+      </button>
+      <button type="button" data-action="fill-random" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Assign at random
+      </button>
+      <button type="button" data-action="clear-names" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Clear names
+      </button>
+    </div>
+  </div>
+
+  <div class="no-print mt-6">
+    <p class="text-sm font-semibold">Price and payout</p>
+    <label for="squares-price" class="mt-2 block text-sm">Price per square</label>
+    <input
+      id="squares-price"
+      class="mt-1 w-full max-w-xs rounded-md border border-line bg-paper px-3 py-2 text-ink"
+      type="text"
+      inputmode="decimal"
+      maxlength="16"
+      placeholder="Optional"
+      data-field="price"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <div class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {
+        QUARTER_LABELS.map((label, index) => (
+          <div>
+            <label for={`squares-split-${index}`} class="block text-sm">
+              {label} %
+            </label>
+            <input
+              id={`squares-split-${index}`}
+              class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+              type="text"
+              inputmode="decimal"
+              maxlength="8"
+              value="25"
+              data-split-input={index}
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="mt-4 rounded-md bg-soft px-3 py-3 text-sm leading-6" data-pot>
+    <p data-pot-count>Named squares: 0 of 100.</p>
+    <p data-pot-money class="mt-1">Enter a price per square to calculate the pot.</p>
+    <ul data-pot-splits class="mt-2 space-y-1" hidden>
+      <li data-split-line="0"></li>
+      <li data-split-line="1"></li>
+      <li data-split-line="2"></li>
+      <li data-split-line="3"></li>
+    </ul>
+    <p data-pot-balance class="mt-2" hidden></p>
+  </div>
+
+  <div class="no-print mt-6">
+    <p class="text-sm font-semibold">Share link</p>
+    <p class="mt-1 text-sm leading-6 text-muted">
+      The link stores this sheet in the address hash. It is not uploaded.
+    </p>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button type="button" data-action="share" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Copy share link
+      </button>
+      <button type="button" data-action="print" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Print / Save as PDF
+      </button>
+      <button type="button" data-action="restore" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper" hidden>
+        Restore the sheet saved on this device
+      </button>
+      <button type="button" data-action="reset-sheet" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Reset sheet
+      </button>
+    </div>
+    <a
+      data-share-anchor
+      class="mt-3 block break-all text-sm text-accent underline-offset-4 hover:underline"
+      href="/tools/super-bowl-squares-generator/"
+      hidden
+    ></a>
+    <input
+      data-share-url
+      class="mt-3 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink"
+      type="text"
+      readonly
+      hidden
+      aria-label="Share link"
+    />
+  </div>
+
+  <p data-save-state class="mt-4 text-sm leading-6 text-muted">Edits save in this browser.</p>
+  <p data-status class="mt-1 text-sm leading-6" aria-live="polite"></p>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to shuffle numbers, calculate the pot, share a link, and save the sheet. You can still type names into the grid. The guide further down this page stays readable either way.
+    </p>
+  </noscript>
+</div>
+
+<script is:inline>
+  document.documentElement.dataset.squaresPage = 'true';
+</script>
+
+<style>
+  .only-print,
+  .square-print {
+    display: none;
+  }
+
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    .only-print {
+      display: block !important;
+    }
+
+    .square-print {
+      display: block !important;
+      min-height: 1.35em;
+      padding: 1px 2px;
+      text-align: center;
+      font-size: 8pt;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .square-field {
+      display: none !important;
+    }
+
+    .squares-scroll {
+      overflow: visible !important;
+    }
+
+    .squares-table {
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+
+    .squares-table th,
+    .squares-table td {
+      border: 1px solid #1c1917 !important;
+    }
+
+    .squares-table tr {
+      break-inside: avoid;
+    }
+
+    :global(html[data-squares-page] header),
+    :global(html[data-squares-page] footer),
+    :global(html[data-squares-page] .ad-slot),
+    :global(html[data-squares-page] article > nav),
+    :global(html[data-squares-page] article > header p),
+    :global(html[data-squares-page] article > section),
+    :global(html[data-squares-page] .tool-disclaimer) {
+      display: none !important;
+    }
+
+    :global(html[data-squares-page] body) {
+      background: #fff !important;
+    }
+
+    :global(html[data-squares-page] main) {
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    :global(html[data-squares-page] h1) {
+      font-size: 18pt !important;
+    }
+  }
+
+  @page {
+    margin: 0.5in;
+  }
+</style>
+
+<script>
+  import {
+    assignNames,
+    defaultSheet,
+    emptyNameIndexes,
+    encodeHashPayload,
+    parseSheet,
+    pasteNames,
+    randomDigits,
+    sheetFromHash,
+    sheetsEqual,
+    shuffle,
+    summarizePot,
+    type SquaresSheet,
+  } from '../lib/squares-sheet';
+
+  const storageKey = 'babeldoc.super-bowl-squares-generator';
+  const amountFormat = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const percentFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+
+  function randomBelow(limit: number): number {
+    if (limit <= 1) return 0;
+    const max = Math.floor(0x1_0000_0000 / limit) * limit;
+    const buffer = new Uint32Array(1);
+    let value = 0;
+    do {
+      crypto.getRandomValues(buffer);
+      value = buffer[0] ?? 0;
+    } while (value >= max);
+    return value % limit;
+  }
+
+  function readStore(): SquaresSheet | null {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      return parseSheet(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStore(sheet: SquaresSheet): boolean {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(sheet));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const roots = document.querySelectorAll('[data-squares]');
+
+  for (const root of roots) {
+    const acrossInput = root.querySelector('[data-team="across"]');
+    const downInput = root.querySelector('[data-team="down"]');
+    const priceInput = root.querySelector('[data-field="price"]');
+    const pasteBox = root.querySelector('[data-role="paste"]');
+    const printAcross = root.querySelector('[data-print-across]');
+    const printDown = root.querySelector('[data-print-down]');
+    const potCount = root.querySelector('[data-pot-count]');
+    const potMoney = root.querySelector('[data-pot-money]');
+    const potSplits = root.querySelector('[data-pot-splits]');
+    const potBalance = root.querySelector('[data-pot-balance]');
+    const saveState = root.querySelector('[data-save-state]');
+    const status = root.querySelector('[data-status]');
+    const shareAnchor = root.querySelector('[data-share-anchor]');
+    const shareUrl = root.querySelector('[data-share-url]');
+    const restoreButton = root.querySelector('[data-action="restore"]');
+    const colDigits = root.querySelectorAll<HTMLElement>('[data-col-digit]');
+    const rowDigits = root.querySelectorAll<HTMLElement>('[data-row-digit]');
+    const squareInputs = [...root.querySelectorAll<HTMLInputElement>('[data-square]')];
+    const splitInputs = [...root.querySelectorAll<HTMLInputElement>('[data-split-input]')];
+
+    if (
+      !(acrossInput instanceof HTMLInputElement) ||
+      !(downInput instanceof HTMLInputElement) ||
+      !(priceInput instanceof HTMLInputElement) ||
+      !(pasteBox instanceof HTMLTextAreaElement) ||
+      !(printAcross instanceof HTMLElement) ||
+      !(printDown instanceof HTMLElement) ||
+      !(potCount instanceof HTMLElement) ||
+      !(potMoney instanceof HTMLElement) ||
+      !(potSplits instanceof HTMLElement) ||
+      !(potBalance instanceof HTMLElement) ||
+      !(saveState instanceof HTMLElement) ||
+      !(status instanceof HTMLElement) ||
+      !(shareAnchor instanceof HTMLAnchorElement) ||
+      !(shareUrl instanceof HTMLInputElement) ||
+      !(restoreButton instanceof HTMLButtonElement) ||
+      colDigits.length !== 10 ||
+      rowDigits.length !== 10 ||
+      squareInputs.length !== 100 ||
+      splitInputs.length !== 4
+    ) {
+      continue;
+    }
+
+    let hashActive = false;
+    let stashed: SquaresSheet | null = null;
+    let saveTimer = 0;
+
+    const setStatus = (message: string) => {
+      status.textContent = message;
+    };
+
+    const readDigits = (nodes: NodeListOf<HTMLElement>): number[] =>
+      [...nodes].map((node) => Number(node.textContent));
+
+    const writeDigits = (nodes: NodeListOf<HTMLElement>, digits: number[]) => {
+      nodes.forEach((node, index) => {
+        node.textContent = String(digits[index] ?? index);
+      });
+    };
+
+    const collect = (): SquaresSheet => ({
+      v: 1,
+      colTeam: acrossInput.value.slice(0, 40),
+      rowTeam: downInput.value.slice(0, 40),
+      cols: readDigits(colDigits),
+      rows: readDigits(rowDigits),
+      names: squareInputs.map((input) => input.value.slice(0, 80)),
+      price: priceInput.value.slice(0, 16),
+      splits: splitInputs.map((input) => input.value.slice(0, 8)),
+    });
+
+    const syncPrintNames = () => {
+      for (const input of squareInputs) {
+        const printed = input.parentElement?.querySelector('[data-print-name]');
+        if (printed) printed.textContent = input.value;
+      }
+    };
+
+    const updateTeamLabels = () => {
+      printAcross.textContent = acrossInput.value.trim() || 'Across';
+      printDown.textContent = downInput.value.trim() || 'Down';
+      const cols = readDigits(colDigits);
+      const rows = readDigits(rowDigits);
+      const across = printAcross.textContent;
+      const down = printDown.textContent;
+      for (const input of squareInputs) {
+        const row = Number(input.dataset.row);
+        const col = Number(input.dataset.col);
+        input.setAttribute('aria-label', `${down} ${rows[row] ?? row}, ${across} ${cols[col] ?? col}`);
+      }
+    };
+
+    const renderPot = () => {
+      const summary = summarizePot(collect());
+      potCount.textContent = `Named squares: ${summary.named} of 100.`;
+      if (summary.priceInvalid) {
+        potMoney.textContent = 'Enter a plain number for the price.';
+        potSplits.hidden = true;
+        potBalance.hidden = true;
+        return;
+      }
+      if (summary.price === null || summary.fullPot === null || summary.currentPot === null) {
+        potMoney.textContent = 'Enter a price per square to calculate the pot.';
+        potSplits.hidden = true;
+        potBalance.hidden = true;
+        return;
+      }
+      potMoney.textContent = `Current pot, from squares with a name: ${amountFormat.format(summary.currentPot)}. Full sheet, if all 100 sell: ${amountFormat.format(summary.fullPot)}.`;
+      potSplits.hidden = false;
+      summary.shares.forEach((share, index) => {
+        const line = potSplits.querySelector(`[data-split-line="${index}"]`);
+        if (!(line instanceof HTMLElement)) return;
+        if (share.percent === null || share.amount === null) {
+          line.textContent = `${share.label}: enter a plain number.`;
+          return;
+        }
+        line.textContent = `${share.label}, ${percentFormat.format(share.percent)}% of the full sheet: ${amountFormat.format(share.amount)}.`;
+      });
+      potBalance.hidden = false;
+      if (summary.percentInvalid || summary.percentTotal === null) {
+        potBalance.textContent = 'Use plain numbers for the quarter shares. Amounts are rounded to the nearest hundredth.';
+        return;
+      }
+      const total = percentFormat.format(summary.percentTotal);
+      potBalance.textContent = summary.balanced
+        ? 'These shares add up to 100%. Amounts are rounded to the nearest hundredth.'
+        : `These shares add up to ${total}%, not 100%. Amounts are rounded to the nearest hundredth.`;
+    };
+
+    const showShareUrl = (url: string, selectInput: boolean) => {
+      shareAnchor.href = url;
+      shareAnchor.textContent = url;
+      shareAnchor.hidden = false;
+      shareUrl.value = url;
+      shareUrl.hidden = !selectInput;
+      if (selectInput) {
+        shareUrl.hidden = false;
+        shareUrl.focus();
+        shareUrl.select();
+      }
+    };
+
+    const shareUrlFor = (sheet: SquaresSheet): string => {
+      const hash = `s=${encodeHashPayload(sheet)}`;
+      return `${location.origin}${location.pathname}${location.search}#${hash}`;
+    };
+
+    const refreshShareLink = (sheet: SquaresSheet) => {
+      if (shareAnchor.hidden && shareUrl.hidden) return;
+      const url = shareUrlFor(sheet);
+      shareAnchor.href = url;
+      if (!shareAnchor.hidden) shareAnchor.textContent = url;
+      shareUrl.value = url;
+    };
+
+    const writeHash = (sheet: SquaresSheet) => {
+      const hash = `#s=${encodeHashPayload(sheet)}`;
+      if (location.hash !== hash) history.replaceState(null, '', hash);
+      refreshShareLink(sheet);
+    };
+
+    const saveNow = () => {
+      const sheet = collect();
+      const saved = writeStore(sheet);
+      saveState.textContent = saved
+        ? 'Saved on this device.'
+        : 'This browser could not save the sheet. Copy a share link if you need a backup.';
+      if (hashActive) writeHash(sheet);
+    };
+
+    const scheduleSave = () => {
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(saveNow, 200);
+    };
+
+    const apply = (sheet: SquaresSheet) => {
+      acrossInput.value = sheet.colTeam;
+      downInput.value = sheet.rowTeam;
+      priceInput.value = sheet.price;
+      splitInputs.forEach((input, index) => {
+        input.value = sheet.splits[index] ?? '25';
+      });
+      writeDigits(colDigits, sheet.cols);
+      writeDigits(rowDigits, sheet.rows);
+      squareInputs.forEach((input, index) => {
+        input.value = sheet.names[index] ?? '';
+      });
+      syncPrintNames();
+      updateTeamLabels();
+      renderPot();
+    };
+
+    const placeNames = (incoming: string[], indexes: number[]) => {
+      if (incoming.length === 0) {
+        setStatus('Add one name per line first.');
+        return;
+      }
+      if (indexes.length === 0) {
+        setStatus('Every square already has a name. Clear names first if you want to start over.');
+        return;
+      }
+      const result = assignNames(collect().names, incoming, indexes);
+      squareInputs.forEach((input, index) => {
+        input.value = result.names[index] ?? '';
+      });
+      syncPrintNames();
+      renderPot();
+      scheduleSave();
+      const fit = result.leftover > 0
+        ? `Filled ${result.placed} squares. ${result.leftover} ${result.leftover === 1 ? 'name did not fit' : 'names did not fit'}.`
+        : `Filled ${result.placed} ${result.placed === 1 ? 'square' : 'squares'}.`;
+      setStatus(fit);
+    };
+
+    root.addEventListener('input', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      if (target instanceof HTMLInputElement && target.dataset.square !== undefined) {
+        const printed = target.parentElement?.querySelector('[data-print-name]');
+        if (printed) printed.textContent = target.value;
+      }
+      if (target === acrossInput || target === downInput) updateTeamLabels();
+      if (target === pasteBox) return;
+      renderPot();
+      scheduleSave();
+    });
+
+    root.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const button = target.closest('[data-action]');
+      if (!(button instanceof HTMLButtonElement) || !root.contains(button)) return;
+      const action = button.dataset.action;
+
+      if (action === 'randomize-both' || action === 'randomize-rows' || action === 'randomize-columns') {
+        if (action !== 'randomize-columns') writeDigits(rowDigits, randomDigits(randomBelow));
+        if (action !== 'randomize-rows') writeDigits(colDigits, randomDigits(randomBelow));
+        updateTeamLabels();
+        renderPot();
+        scheduleSave();
+        setStatus('Shuffled the digits. Each number from 0 through 9 is used once on that side.');
+        return;
+      }
+
+      if (action === 'reset-numbers') {
+        writeDigits(colDigits, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        writeDigits(rowDigits, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        updateTeamLabels();
+        scheduleSave();
+        setStatus('Reset both sides to 0 through 9, in order.');
+        return;
+      }
+
+      if (action === 'fill-order' || action === 'fill-random') {
+        const incoming = pasteNames(pasteBox.value);
+        const empty = emptyNameIndexes(collect().names);
+        const targets = action === 'fill-random' ? shuffle(empty, randomBelow) : empty;
+        placeNames(incoming, targets);
+        return;
+      }
+
+      if (action === 'clear-names') {
+        const filled = squareInputs.some((input) => input.value.trim() !== '');
+        if (filled && !window.confirm('Clear every name from the grid?')) return;
+        for (const input of squareInputs) input.value = '';
+        syncPrintNames();
+        renderPot();
+        scheduleSave();
+        setStatus('Cleared the names. Numbers, price, and team labels stayed.');
+        return;
+      }
+
+      if (action === 'reset-sheet') {
+        if (!window.confirm('Reset the whole sheet? This removes names, numbers, the price, and the copy saved in this browser.')) return;
+        hashActive = false;
+        stashed = null;
+        restoreButton.hidden = true;
+        history.replaceState(null, '', `${location.pathname}${location.search}`);
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {
+          // Storage can be blocked. The form still resets.
+        }
+        apply(defaultSheet());
+        pasteBox.value = '';
+        shareAnchor.hidden = true;
+        shareUrl.hidden = true;
+        shareUrl.value = '';
+        saveState.textContent = 'Edits save in this browser.';
+        setStatus('Reset the sheet and removed the copy saved in this browser.');
+        return;
+      }
+
+      if (action === 'restore') {
+        if (!stashed) return;
+        hashActive = false;
+        history.replaceState(null, '', `${location.pathname}${location.search}`);
+        apply(stashed);
+        const saved = writeStore(stashed);
+        stashed = null;
+        restoreButton.hidden = true;
+        shareAnchor.hidden = true;
+        shareUrl.hidden = true;
+        shareUrl.value = '';
+        saveState.textContent = saved ? 'Saved on this device.' : 'This browser could not save the sheet.';
+        setStatus('Restored the sheet that was saved on this device.');
+        return;
+      }
+
+      if (action === 'print') {
+        syncPrintNames();
+        updateTeamLabels();
+        window.print();
+        return;
+      }
+
+      if (action === 'share') {
+        const sheet = collect();
+        hashActive = true;
+        const url = shareUrlFor(sheet);
+        writeHash(sheet);
+        writeStore(sheet);
+        saveState.textContent = 'Saved on this device.';
+        const clipboard = navigator.clipboard;
+        if (!clipboard?.writeText) {
+          showShareUrl(url, true);
+          setStatus('Copy the link shown here. It stores this sheet in the link hash and does not upload it.');
+          return;
+        }
+        void clipboard.writeText(url).then(
+          () => {
+            showShareUrl(url, false);
+            setStatus('Share link copied. It stores this sheet in the link hash and does not upload it.');
+          },
+          () => {
+            showShareUrl(url, true);
+            setStatus('Copy the link shown here. It stores this sheet in the link hash and does not upload it.');
+          },
+        );
+      }
+    });
+
+    window.addEventListener('beforeprint', () => {
+      syncPrintNames();
+      updateTeamLabels();
+    });
+
+    const stored = readStore();
+    const shared = sheetFromHash(location.hash);
+    if (shared) {
+      hashActive = true;
+      if (stored && !sheetsEqual(stored, shared)) {
+        stashed = stored;
+        restoreButton.hidden = false;
+      }
+      apply(shared);
+      showShareUrl(shareUrlFor(shared), false);
+      setStatus('Opened this sheet from the share link. Your saved sheet stays put until you edit or restore it.');
+    } else if (location.hash.startsWith('#s=')) {
+      if (stored) {
+        apply(stored);
+        setStatus('This share link could not be read. Loaded the sheet saved in this browser.');
+      } else {
+        updateTeamLabels();
+        renderPot();
+        setStatus('This share link could not be read. Started a blank sheet.');
+      }
+    } else if (stored) {
+      apply(stored);
+      setStatus('Loaded the sheet saved in this browser.');
+    } else {
+      updateTeamLabels();
+      renderPot();
+    }
+  }
+</script>
