@@ -131,7 +131,7 @@ export const tools: ToolDefinition[] = [
         heading: 'What this counter does not do',
         paragraphs: [
           'It does not apply a style guide. School assignments, APA papers, and publishers sometimes count hyphenated compounds in their own way. If an exact number will be graded or paid, confirm it in the editor that submits the work.',
-          'It does not count tokens for a language model. The token counter does that: an exact OpenAI tokenizer for GPT models, and a labeled estimate for Claude and Gemini.',
+          'It does not count tokens for a language model. The token counter estimates tokens for the GPT, Claude, and Gemini families.',
           'It does not store a history, export a file, or check grammar. There is no character cap in the tool. A very long paste stays on your device, but it can make the tab feel slow because the count runs on each change.',
         ],
       },
@@ -197,20 +197,20 @@ export const tools: ToolDefinition[] = [
     h1: 'Token Counter',
     title: 'Token Counter — GPT, Claude, and Gemini | BabelDoc',
     description:
-      'Count GPT tokens with the public OpenAI tokenizer, and estimate Claude or Gemini tokens. Paste text or upload a file. It stays in this browser.',
-    ogTitle: 'Token counter for GPT, Claude, and Gemini',
+      'Estimate tokens for GPT, Claude, or Gemini. Paste text or upload a file. The count is approximate and stays in this browser.',
+    ogTitle: 'Estimate tokens for GPT, Claude, and Gemini',
     category: 'text',
-    cardBlurb: 'Count GPT tokens exactly, and estimate Claude and Gemini tokens.',
+    cardBlurb: 'Estimate tokens for the GPT, Claude, and Gemini families.',
     buttonLabel: 'Count tokens',
     intro:
-      'Paste text, or upload a text or code file, and see tokens, characters, and words update as you type. GPT-4o, GPT-4.1, and o-series models use OpenAI’s o200k_base tokenizer. GPT-4 and GPT-3.5 use cl100k_base. Claude and Gemini are estimates, because their tokenizers are not public. The text and the file stay in this browser.',
+      'Paste text, or upload a text or code file, and see an estimated token count for GPT, Claude, or Gemini. The same approximation is used for each family, so the token number does not change when you switch. Characters and words update as you type. The text and the file stay in this browser.',
     disclaimer:
-      'GPT counts use the tokenizer named on the page. Claude and Gemini figures are estimates, not a vendor bill. A chat API can add tokens for message framing that are not in the box. Your text stays in this browser.',
+      'Every token figure on this page is an estimate for the family you select. It is not certified for every current or future model, and it is not a vendor bill. A chat API can add tokens for message framing that are not in the box. Your text stays in this browser.',
     howToTitle: 'How to use this token counter',
     howTo: [
-      'Choose a model. GPT-4o, GPT-4.1, and o-series share one OpenAI tokenizer. GPT-4 and GPT-3.5 share another. Claude and Gemini stay on the estimate.',
+      'Choose GPT, Claude, or Gemini. The token number uses the same estimate for each family.',
       'Paste text, type, or press Upload file. You can also drop a text file on the box. The file is read in this browser and is not uploaded.',
-      'Read the badge next to Tokens. Exact means the OpenAI tokenizer ran in your browser. Estimate means a character rule of thumb.',
+      'Read the Estimate badge next to Tokens. The number is approximate, not a certified count for every model in that family.',
       'To price a call, type what you pay per 1 million tokens. The page does not keep a price list.',
       'Press Clear text to empty the box. This page does not save what you pasted or the file you opened.',
     ],
@@ -219,28 +219,28 @@ export const tools: ToolDefinition[] = [
         heading: 'What a token is',
         paragraphs: [
           'A token is a chunk of text a model reads. It is not always a word. Common words are often one token. Longer or less common words are split. Spaces and punctuation are part of the count.',
-          'The model does not see letters one by one. A tokenizer turns the text into a list of ids, and the length of that list is the token count. “ChatGPT” is 3 tokens with the GPT-4 tokenizer and 2 tokens with the GPT-4o tokenizer. “hello world” is 2 tokens on both, and 11 characters.',
+          'This page does not run a separate tokenizer for each family or model version. It estimates the length of the text in the box. “hello world” is 11 characters and 3 estimated tokens.',
         ],
       },
       {
-        heading: 'Why the same text can have different counts',
+        heading: 'Why this count is an estimate',
         paragraphs: [
-          'Each model family has its own vocabulary. GPT-4o, GPT-4.1, and o-series models use the public encoding named o200k_base. GPT-4 and GPT-3.5, including GPT-4 Turbo, use cl100k_base. This page loads only the encoding you pick, and only after there is text to count, so the first visit stays lighter.',
-          'Those two counts are exact for the text in the box. They match the public OpenAI tokenizer. They do not add the extra tokens an API request uses for roles, tools, or a system message you did not paste.',
-          'Claude and Gemini are separate products. Their tokenizers have not been published, so this page does not pretend to run them. The Claude and Gemini choices are a local estimate for when you want a rough LLM token count before you open the vendor’s own usage page.',
+          'GPT, Claude, and Gemini do not share one vocabulary, and a later model in the same family can split text differently from an earlier one. A figure that matches one model can miss another.',
+          'The selector names the family you have in mind. The token number itself uses one rule for all three, so switching family does not change it. The page does not invent a gap between vendors.',
+          'The estimate does not add tokens for roles, tools, images, or a system message you did not paste. It is a rough length, not a bill.',
         ],
       },
       {
         heading: 'How the estimate is calculated',
         paragraphs: [
           'Characters are Unicode code points, the same rule as the character total and the word counter. A single emoji such as “😀” is one character. The estimate is zero when the box is empty. Otherwise it is the character count divided by 4, rounded up.',
-          '“hello world” is 11 characters, so the estimate is 3 tokens. The exact GPT count for that phrase is 2. Code, emoji, and many languages other than English can land far from the guess. An emoji can be one character and several tokens, so the estimate can be low. The number is marked Estimate whenever Claude or Gemini is selected.',
+          '“hello world” is 11 characters, so the estimate is 3 tokens. Code, emoji, and many languages other than English can land far from that guess. An emoji can be one character and several tokens, so the estimate can be low. The badge says Estimate for GPT, Claude, and Gemini.',
         ],
       },
       {
         heading: 'How cost is estimated',
         paragraphs: [
-          'Type a price per 1 million tokens. Cost equals the token count divided by 1,000,000, then multiplied by that price. The page does not store OpenAI, Anthropic, or Google prices, because they change and they differ for input and output.',
+          'Type a price per 1 million tokens. Cost equals the estimated token count divided by 1,000,000, then multiplied by that price. The page does not store OpenAI, Anthropic, or Google prices, because they change and they differ for input and output.',
           'If you are pricing a reply, count the prompt and the completion separately and type the rate that applies to each. The box holds one price at a time.',
         ],
       },
@@ -255,7 +255,7 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'Privacy',
         paragraphs: [
-          'The text never leaves your browser. A file you choose is read on this device and is not sent to BabelDoc. The tokenizer file downloads to your device only if you pick a GPT model and there is text to count. Closing the tab clears the box.',
+          'The text never leaves your browser. A file you choose is read on this device and is not sent to BabelDoc. Counting does not download a tokenizer. Closing the tab clears the box.',
           'If analytics is on, it measures the visit, not the text. The privacy policy describes the site-wide rules.',
         ],
       },
@@ -272,24 +272,19 @@ export const tools: ToolDefinition[] = [
           'Yes. Use Upload file, or drop a file on the text box. Text and code files are supported, including .txt, .md, .csv, .json, .html, .xml, .yaml, and source files such as .py, .js, and .ts. The limit is 5 MB. PDF, Word, and other binary files are not supported yet. The file is read as UTF-8 in this browser and is not uploaded.',
       },
       {
-        question: 'Which GPT models are exact?',
+        question: 'How accurate is the token count?',
         answer:
-          'GPT-4o, GPT-4.1, and o-series models are counted with o200k_base. GPT-4 and GPT-3.5, including GPT-4 Turbo, are counted with cl100k_base. Both use the public OpenAI tokenizer, loaded in your browser.',
+          'It is an estimate for the family you select, not a certified count for every current or future model. The rule is the character count divided by 4, rounded up. The same rule is used for GPT, Claude, and Gemini.',
       },
       {
-        question: 'Why are Claude and Gemini estimates?',
+        question: 'Why does the count stay the same when I switch family?',
         answer:
-          'Anthropic and Google have not published the Claude and Gemini tokenizers. This page divides the character count by 4, rounds up, and labels the result Estimate so it is not mistaken for an official count.',
-      },
-      {
-        question: 'Why does the count change when I switch models?',
-        answer:
-          'The vocabularies are different. o200k_base is larger than cl100k_base, so the same sentence can be fewer tokens. “ChatGPT” is one example: 3 tokens on cl100k_base and 2 on o200k_base. Claude and Gemini use a different method entirely.',
+          'The selector records which family you are estimating. It does not apply a different formula. GPT, Claude, and Gemini can tokenize differently, and this page does not invent a separate number for each.',
       },
       {
         question: 'Will this match my API bill?',
         answer:
-          'For GPT models, the box matches the tokenizer for the text you pasted. The API bill can be higher because the request adds framing you do not see, such as role labels. Do not check a Claude or Gemini bill against this estimate.',
+          'Do not expect it to. The estimate can miss the vendor’s own split, and an API request can add framing you did not paste, such as role labels. Use the vendor’s usage page when the bill matters.',
       },
       {
         question: 'What price should I enter?',
@@ -299,13 +294,13 @@ export const tools: ToolDefinition[] = [
       {
         question: 'Is a word the same as a token?',
         answer:
-          'No. The word total splits on whitespace, the same rule as the word counter. A token follows a model vocabulary, so one word can be one token or several. Use the word counter when you only need words, sentences, and a reading time.',
+          'No. The word total splits on whitespace, the same rule as the word counter. This page estimates tokens from characters, so one word can be one estimated token or several. Use the word counter when you only need words, sentences, and a reading time.',
       },
     ],
     related: ['word-counter'],
     added: '2026-11-19',
     browserRequirements:
-      'Requires a modern web browser. JavaScript is required to update the counts and to read a file you choose. The OpenAI tokenizer downloads only when you count text with a GPT model. The guide on the page is available without JavaScript.',
+      'Requires a modern web browser. JavaScript is required to update the counts and to read a file you choose. The guide on the page is available without JavaScript.',
     component: TokenCounter,
   },
   {
