@@ -1,0 +1,383 @@
+---
+// Discord timestamp codes. Formatting stays in this browser. Not affiliated with Discord.
+import { DISCORD_STYLES } from '../lib/discord-timestamp';
+---
+
+<div data-discord-timestamp class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="discord-when" class="block text-sm font-semibold">Date and time</label>
+      <input
+        id="discord-when"
+        class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        type="datetime-local"
+        step="1"
+        data-field="when"
+      />
+    </div>
+    <div>
+      <label for="discord-zone" class="block text-sm font-semibold">Timezone for this date</label>
+      <select
+        id="discord-zone"
+        class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        data-field="zone"
+      >
+        <option value="">Loading timezones…</option>
+      </select>
+    </div>
+  </div>
+  <p data-device-zone class="mt-2 text-sm leading-6 text-muted">This device’s timezone appears here once JavaScript is running.</p>
+  <p data-zone-readout class="mt-1 text-sm leading-6 text-muted"></p>
+  <p class="mt-2 text-sm leading-6 text-muted">
+    The numbers in the date box are read in the timezone you select. A Discord app shows the code in each viewer’s own timezone. The preview below uses this device.
+  </p>
+
+  <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="Move the time">
+    <button type="button" data-shift="now" class="inline-flex min-h-11 items-center rounded-md border border-ink px-3 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">Now</button>
+    <button type="button" data-shift="-3600" class="inline-flex min-h-11 items-center rounded-md border border-ink px-3 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">−1 hour</button>
+    <button type="button" data-shift="3600" class="inline-flex min-h-11 items-center rounded-md border border-ink px-3 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">+1 hour</button>
+    <button type="button" data-shift="-86400" class="inline-flex min-h-11 items-center rounded-md border border-ink px-3 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">−1 day</button>
+    <button type="button" data-shift="86400" class="inline-flex min-h-11 items-center rounded-md border border-ink px-3 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">+1 day</button>
+    <button type="button" data-shift="604800" class="inline-flex min-h-11 items-center rounded-md border border-ink px-3 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">Next week</button>
+  </div>
+
+  <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">Unix time</dt>
+      <dd data-unix class="font-serif text-2xl tabular-nums">—</dd>
+    </div>
+    <div class="rounded-md bg-soft px-3 py-2">
+      <dt class="text-xs font-semibold tracking-wide text-muted uppercase">UTC</dt>
+      <dd data-utc class="mt-1 text-sm leading-6">—</dd>
+    </div>
+  </dl>
+
+  <ul class="mt-4 space-y-3">
+    {
+      DISCORD_STYLES.map((style) => (
+        <li data-style-row={style.id} class="rounded-md border border-line p-3">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold">
+                {style.name}
+                <span class="ml-2 font-sans text-xs font-semibold tracking-wide text-muted uppercase">{style.id}</span>
+                {style.id === 'f' && (
+                  <span class="ml-2 font-sans text-xs font-semibold tracking-wide text-muted uppercase">Default</span>
+                )}
+              </p>
+              <p class="text-sm leading-6 text-muted">{style.detail}</p>
+              <code data-code class="mt-2 block font-mono text-sm break-all">—</code>
+            </div>
+            <button
+              type="button"
+              data-action="copy"
+              data-style={style.id}
+              class="inline-flex min-h-11 shrink-0 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
+            >
+              Copy
+            </button>
+          </div>
+          <p class="mt-2 text-sm leading-6">
+            <span class="text-muted">Preview: </span>
+            <span data-preview>—</span>
+          </p>
+        </li>
+      ))
+    }
+  </ul>
+
+  <div class="mt-6">
+    <label for="discord-decode" class="block text-sm font-semibold">Paste a Unix time or a Discord code</label>
+    <div class="mt-2 flex flex-col gap-2 sm:flex-row">
+      <input
+        id="discord-decode"
+        class="w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        type="text"
+        inputmode="text"
+        autocomplete="off"
+        spellcheck="false"
+        placeholder="1710000000 or <t:1710000000:f>"
+        data-field="decode"
+      />
+      <button
+        type="button"
+        data-action="decode"
+        class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
+      >
+        Decode
+      </button>
+    </div>
+    <p class="mt-2 text-sm leading-6 text-muted">
+      A 13-digit value is treated as milliseconds and converted to seconds. The style letter is case-sensitive, except r, which is read as R.
+    </p>
+  </div>
+
+  <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to build the codes and the live preview. The guide further down this page stays readable either way.
+    </p>
+  </noscript>
+</div>
+
+<style>
+  [data-style-row].is-active {
+    border-color: #7c2d12;
+    background: #f3ebe3;
+  }
+</style>
+
+<script>
+  import {
+    DISCORD_STYLES,
+    deviceTimeZone,
+    formatPreview,
+    isFormattableUnix,
+    isValidTimeZone,
+    offsetLabel,
+    parseTimestampInput,
+    timeZoneNames,
+    timestampCode,
+    toDateTimeLocalValue,
+    unixFromDateTimeLocal,
+    type DiscordStyleId,
+  } from '../lib/discord-timestamp';
+
+  const roots = document.querySelectorAll<HTMLElement>('[data-discord-timestamp]');
+
+  function nowUnix(): number {
+    return Math.floor(Date.now() / 1000);
+  }
+
+  for (const root of roots) {
+    const whenInput = root.querySelector('[data-field="when"]');
+    const zoneSelect = root.querySelector('[data-field="zone"]');
+    const decodeInput = root.querySelector('[data-field="decode"]');
+    const deviceZone = root.querySelector('[data-device-zone]');
+    const zoneReadout = root.querySelector('[data-zone-readout]');
+    const unixOut = root.querySelector('[data-unix]');
+    const utcOut = root.querySelector('[data-utc]');
+    const status = root.querySelector('[data-status]');
+    const rows = [...root.querySelectorAll<HTMLElement>('[data-style-row]')];
+
+    if (
+      !(whenInput instanceof HTMLInputElement) ||
+      !(zoneSelect instanceof HTMLSelectElement) ||
+      !(decodeInput instanceof HTMLInputElement) ||
+      !(deviceZone instanceof HTMLElement) ||
+      !(zoneReadout instanceof HTMLElement) ||
+      !(unixOut instanceof HTMLElement) ||
+      !(utcOut instanceof HTMLElement) ||
+      !(status instanceof HTMLElement) ||
+      rows.length !== DISCORD_STYLES.length
+    ) {
+      continue;
+    }
+
+    const localZone = deviceTimeZone();
+    let unix = nowUnix();
+    let activeStyle: DiscordStyleId = 'f';
+    const copyTimers = new Map<HTMLButtonElement, number>();
+
+    const setStatus = (message: string) => {
+      status.textContent = message;
+    };
+
+    const selectedZone = (): string => {
+      const value = zoneSelect.value;
+      return isValidTimeZone(value) ? value : localZone;
+    };
+
+    const fillZones = () => {
+      const zones = timeZoneNames();
+      const seen = new Set<string>();
+      const ordered = [localZone, 'UTC', ...zones].filter((zone) => {
+        if (!zone || seen.has(zone) || !isValidTimeZone(zone)) return false;
+        seen.add(zone);
+        return true;
+      });
+      zoneSelect.replaceChildren();
+      for (const zone of ordered) {
+        const option = document.createElement('option');
+        option.value = zone;
+        const suffix = zone === localZone ? ' — this device' : '';
+        option.textContent = `${zone}${suffix}`;
+        zoneSelect.append(option);
+      }
+      zoneSelect.value = localZone;
+    };
+
+    const writePicker = () => {
+      whenInput.value = toDateTimeLocalValue(unix, selectedZone());
+    };
+
+    const markActive = () => {
+      for (const row of rows) {
+        row.classList.toggle('is-active', row.dataset.styleRow === activeStyle);
+      }
+    };
+
+    const render = () => {
+      const zone = selectedZone();
+      const deviceOffset = offsetLabel(unix, localZone);
+      const selectedOffset = offsetLabel(unix, zone);
+      deviceZone.textContent = `This device is set to ${localZone} (${deviceOffset}).`;
+      zoneReadout.textContent =
+        zone === localZone
+          ? `The date box is read as ${localZone}.`
+          : `The date box is read as ${zone} (${selectedOffset}). The preview still uses ${localZone}.`;
+      unixOut.textContent = String(unix);
+      utcOut.textContent = formatPreview(unix, 'f', 'UTC', unix);
+      const current = nowUnix();
+      for (const row of rows) {
+        const style = row.dataset.styleRow;
+        if (style !== 't' && style !== 'T' && style !== 'd' && style !== 'D' && style !== 'f' && style !== 'F' && style !== 'R') {
+          continue;
+        }
+        const code = row.querySelector('[data-code]');
+        const preview = row.querySelector('[data-preview]');
+        if (code) code.textContent = timestampCode(unix, style);
+        if (preview) preview.textContent = formatPreview(unix, style, localZone, current);
+      }
+      markActive();
+    };
+
+    const refreshRelative = () => {
+      const row = rows.find((item) => item.dataset.styleRow === 'R');
+      const preview = row?.querySelector('[data-preview]');
+      if (preview) preview.textContent = formatPreview(unix, 'R', localZone, nowUnix());
+    };
+
+    const setUnix = (next: number, message: string) => {
+      unix = next;
+      writePicker();
+      render();
+      setStatus(message);
+    };
+
+    const readPicker = (message: string) => {
+      const next = unixFromDateTimeLocal(whenInput.value, selectedZone());
+      if (next === null) {
+        unixOut.textContent = '—';
+        utcOut.textContent = '—';
+        for (const row of rows) {
+          const code = row.querySelector('[data-code]');
+          const preview = row.querySelector('[data-preview]');
+          if (code) code.textContent = '—';
+          if (preview) preview.textContent = '—';
+        }
+        setStatus('Enter a real date and time. Years 1 through 9999 can be formatted.');
+        return;
+      }
+      unix = next;
+      render();
+      if (message) setStatus(message);
+    };
+
+    fillZones();
+    writePicker();
+    render();
+    setStatus('Showing the current time. Copy any row. f is the default style.');
+
+    whenInput.addEventListener('input', () => {
+      readPicker('');
+    });
+
+    zoneSelect.addEventListener('change', () => {
+      readPicker(`Reading the same date and time in ${selectedZone()}.`);
+    });
+
+    root.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const shiftButton = target.closest('[data-shift]');
+      if (shiftButton instanceof HTMLButtonElement && root.contains(shiftButton)) {
+        const shift = shiftButton.dataset.shift;
+        if (shift === 'now') {
+          setUnix(nowUnix(), 'Set to the current time.');
+          return;
+        }
+        const delta = Number(shift);
+        if (!Number.isFinite(delta)) return;
+        const next = unix + delta;
+        if (!isFormattableUnix(next)) {
+          setStatus('That step is outside the range this page can format.');
+          return;
+        }
+        const label =
+          delta === 3600
+            ? 'Added 1 hour.'
+            : delta === -3600
+              ? 'Subtracted 1 hour.'
+              : delta === 86400
+                ? 'Added 1 day.'
+                : delta === -86400
+                  ? 'Subtracted 1 day.'
+                  : delta === 604800
+                    ? 'Added 7 days.'
+                    : 'Updated the time.';
+        setUnix(next, label);
+        return;
+      }
+
+      const copyButton = target.closest('[data-action="copy"]');
+      if (copyButton instanceof HTMLButtonElement && root.contains(copyButton)) {
+        const style = copyButton.dataset.style;
+        const row = rows.find((item) => item.dataset.styleRow === style);
+        const code = row?.querySelector('[data-code]')?.textContent ?? '';
+        if (!code.startsWith('<t:')) {
+          setStatus('Set a date and time before copying.');
+          return;
+        }
+        const finish = (copied: boolean) => {
+          const existing = copyTimers.get(copyButton);
+          if (existing) window.clearTimeout(existing);
+          copyButton.textContent = copied ? 'Copied' : 'Copy';
+          if (copied) {
+            copyTimers.set(
+              copyButton,
+              window.setTimeout(() => {
+                copyButton.textContent = 'Copy';
+              }, 1500),
+            );
+          }
+          setStatus(copied ? `Copied ${code}` : `Select ${code} and copy it from the row. Clipboard access was blocked.`);
+        };
+        const clipboard = navigator.clipboard;
+        if (!clipboard?.writeText) {
+          finish(false);
+          return;
+        }
+        void clipboard.writeText(code).then(
+          () => finish(true),
+          () => finish(false),
+        );
+        return;
+      }
+
+      if (target.closest('[data-action="decode"]') && root.contains(target)) {
+        const parsed = parseTimestampInput(decodeInput.value);
+        if (!parsed) {
+          setStatus('Paste a Unix time in seconds, or a code such as <t:1710000000:f>.');
+          return;
+        }
+        unix = parsed.unix;
+        activeStyle = parsed.style ?? 'f';
+        writePicker();
+        render();
+        const styleNote = parsed.style
+          ? `Marked the ${parsed.style} row.`
+          : 'No style letter was included, so the default f row is marked.';
+        setStatus(`Decoded Unix time ${parsed.unix}. ${styleNote}`);
+      }
+    });
+
+    decodeInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      root.querySelector<HTMLButtonElement>('[data-action="decode"]')?.click();
+    });
+
+    window.setInterval(refreshRelative, 1000);
+  }
+</script>

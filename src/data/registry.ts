@@ -1,6 +1,8 @@
 import WordCounter from '../tools/word-counter.astro';
 import TokenCounter from '../tools/token-counter.astro';
 import SuperBowlSquares from '../tools/super-bowl-squares-generator.astro';
+import DiscordTimestamp from '../tools/discord-timestamp-generator.astro';
+import TournamentBracket from '../tools/tournament-bracket-generator.astro';
 
 /**
  * Tool registry.
@@ -22,7 +24,12 @@ export const categories = [
   {
     id: 'events',
     name: 'Events',
-    description: 'Printable sheets for parties, pools, and fundraisers.',
+    description: 'Printable sheets and brackets for parties, pools, and fundraisers.',
+  },
+  {
+    id: 'time',
+    name: 'Time',
+    description: 'Build chat timestamps from a date and time, without leaving the browser.',
   },
 ] as const;
 
@@ -61,7 +68,9 @@ export interface ToolDefinition {
   related: string[];
   added: string;
   browserRequirements: string;
-  component: typeof WordCounter | typeof TokenCounter | typeof SuperBowlSquares;
+  /** Wide tools use the full content column so a diagram can sit beside the reading width. */
+  layout?: 'wide';
+  component: typeof WordCounter | typeof TokenCounter | typeof SuperBowlSquares | typeof DiscordTimestamp | typeof TournamentBracket;
 }
 
 export const tools: ToolDefinition[] = [
@@ -409,11 +418,260 @@ export const tools: ToolDefinition[] = [
           'The grid has one line per square. Type both names in that line, such as “Sam and Jo”, if they are splitting the cost. There is no second layer of squares.',
       },
     ],
-    related: [],
+    related: ['tournament-bracket-generator'],
     added: '2026-11-19',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to shuffle numbers, calculate the pot, share a link, and save the sheet on this device. You can still read the guide without JavaScript. Printing uses the browser print dialog.',
     component: SuperBowlSquares,
+  },
+  {
+    slug: 'discord-timestamp-generator',
+    name: 'Discord Timestamp Generator',
+    h1: 'Discord Timestamp Generator',
+    title: 'Discord Timestamp Generator — Every Chat Style | BabelDoc',
+    description:
+      'Free Discord timestamp generator for every chat style. Pick a date and time, preview how each code reads, and copy it. Nothing leaves this browser.',
+    ogTitle: 'Discord timestamp codes for every chat style',
+    category: 'time',
+    cardBlurb: 'Build a chat timestamp code for every style and copy it.',
+    buttonLabel: 'Make a timestamp',
+    intro:
+      'Pick a date and time and get a Discord timestamp code for every style the chat box accepts. Copy the one you need. The preview uses this device’s clock and language. This page is not affiliated with Discord.',
+    disclaimer:
+      'Not affiliated with Discord. The preview is how this browser formats the time, so a Discord app set to another language can differ in small ways. The date you pick is not uploaded and is not saved.',
+    howToTitle: 'How to use this timestamp generator',
+    howTo: [
+      'Set the date and time. The box starts at the current time on this device, including seconds.',
+      'Leave the timezone on this device, or choose another one if the clock you typed belongs somewhere else. The numbers in the box stay put. The Unix time changes to match that timezone.',
+      'Press +1 hour, +1 day, or Next week to move the clock. Next week adds 7 days. Now returns to the current time.',
+      'Read the row for the style you want. The f row is Discord’s default. Each row shows the code and a preview of how a Discord app on this device would render it.',
+      'Press Copy on that row and paste the code into Discord. The relative row updates on its own while this page is open.',
+      'To check a code you already have, paste it or a Unix time into the decode box and press Decode.',
+    ],
+    sections: [
+      {
+        heading: 'What a Discord timestamp code is',
+        paragraphs: [
+          'A Discord timestamp is a short code that stores a Unix time and a style letter. Unix time is a count of seconds. The code looks like <t:1710000000:f>. Discord turns that into a date for each person who reads the message, using that person’s own timezone.',
+          'This page builds the code. It does not send the message, and it does not talk to Discord. You copy the code and paste it where you want it.',
+        ],
+      },
+      {
+        heading: 'What each style shows',
+        paragraphs: [
+          'The letter after the second colon picks the layout. t is a short time. T adds seconds. d is a numeric date. D spells the month. f is the default, a date and a time without the weekday. F adds the weekday. R is a relative phrase, such as “in 3 hours” or “2 days ago”.',
+          'The preview uses your browser’s language and this device’s timezone, because that is what a Discord app on this same device would do. Someone in another timezone will see a different clock from the same code. The Unix time in the code does not change for them.',
+        ],
+      },
+      {
+        heading: 'Timezones and the date box',
+        paragraphs: [
+          'The date box has no timezone of its own. This page reads those numbers in the timezone you select. If you type 15:00 and choose Asia/Tokyo, the code is for 15:00 in Tokyo, even when this device is set somewhere else.',
+          'Changing the timezone keeps the numbers in the box and recalculates the Unix time. It does not move the clock to show the same instant in the new timezone. The line under the box names this device’s timezone and the offset used for the selected one.',
+          'A jump forward for daylight saving has a missing hour. A time in that gap is read as the next valid instant. A repeated hour in the fall is read as the first one. If the exact instant matters, check the Unix time and the UTC line.',
+        ],
+      },
+      {
+        heading: 'Relative times',
+        paragraphs: [
+          'The R preview updates about once a second. The phrase uses the usual ranges: seconds, then minutes, hours, days, months, and years. The words come from the browser, so they follow this device’s language.',
+          'A Discord client can choose a slightly different unit or a different phrase for the same gap. Use the preview as a close reading, not as a pixel match of the Discord app.',
+        ],
+      },
+      {
+        heading: 'Decoding a code you already have',
+        paragraphs: [
+          'Paste a code such as <t:1710000000:f>, or the number by itself. The page sets the date box to that instant in the timezone you have selected and marks the matching row. A code with no style letter is treated as the default, f.',
+          'A whole number with 13 digits is treated as milliseconds and divided by 1,000. That covers a time copied from JavaScript’s Date.now(). Longer numbers, such as a Discord snowflake id, are not timestamps and are rejected.',
+        ],
+      },
+      {
+        heading: 'What this page does not do',
+        paragraphs: [
+          'It does not post to Discord, look up a server, or check that a channel will accept the code. It does not use the Discord logo, and it is not an official Discord tool.',
+          'It does not save the date. A refresh starts at the current time again. It also does not format times outside years 1 through 9999, which is the range this browser’s date formatter supports.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'The date stays in this browser. Building a code does not send it to BabelDoc, and this page does not write it to local storage.',
+          'If analytics is on, it records the visit, not the time you picked. The privacy policy has the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Is this affiliated with Discord?',
+        answer:
+          'No. It is an unofficial generator. It does not use the Discord logo, and it does not connect to a Discord account or server.',
+      },
+      {
+        question: 'Which timestamp style should I use?',
+        answer:
+          'Use f for a normal date and time. That is Discord’s default when a code has no style letter. Use R when you want a relative phrase, t or T for a time of day, and d or D for a date alone. F adds the weekday.',
+      },
+      {
+        question: 'Will the preview match Discord exactly?',
+        answer:
+          'It will be close on this device. The preview uses this browser’s language and timezone. A Discord app in another language can use different punctuation, a 12-hour or 24-hour clock, or a slightly different relative phrase.',
+      },
+      {
+        question: 'Why does the preview ignore the timezone I selected?',
+        answer:
+          'The timezone menu says how to read the date box, so 15:00 can mean 15:00 in Tokyo. Discord then shows that instant in the viewer’s own timezone. The preview is that second step for this device. The UTC line shows the same instant with the timezone taken out.',
+      },
+      {
+        question: 'Can I paste a code to see what time it is?',
+        answer:
+          'Yes. Paste the full code, or the Unix time in seconds, and press Decode. The date box moves to that instant in the selected timezone, and the matching style row is marked.',
+      },
+      {
+        question: 'What does Next week do?',
+        answer:
+          'It adds 7 days, as 7 times 24 hours, to the time currently in the box. It does not jump to next Monday. +1 day adds exactly 24 hours. Across a daylight-saving change, the clock time in the box can shift by an hour because the timezone offset changed.',
+      },
+      {
+        question: 'Is the time I pick uploaded?',
+        answer:
+          'No. The codes are built in your browser. This page does not save the date and does not send it to BabelDoc.',
+      },
+      {
+        question: 'Does it work on a phone?',
+        answer:
+          'Yes. The date control is the one your phone provides, and each code has its own copy button. JavaScript has to be on for the codes to appear. The guide on this page is still there if it is not.',
+      },
+    ],
+    related: [],
+    added: '2026-11-23',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to build the codes, preview them, and decode a pasted value. The guide on the page is available without JavaScript.',
+    component: DiscordTimestamp,
+  },
+  {
+    slug: 'tournament-bracket-generator',
+    name: 'Tournament Bracket Generator',
+    h1: 'Tournament Bracket Generator',
+    title: 'Tournament Bracket Generator — Single Elimination | BabelDoc',
+    description:
+      'Free tournament bracket generator for a single-elimination draw. Paste 2 to 64 names, click winners, and save a PNG. It stays in your browser.',
+    ogTitle: 'Single-elimination bracket you can fill in and save',
+    category: 'events',
+    cardBlurb: 'Paste names, click winners, and export a single-elimination bracket.',
+    buttonLabel: 'Build a bracket',
+    intro:
+      'Paste names, one per line, and build a single-elimination bracket for an office pool, an esports night, or a sports league you run. Click a name to advance it. Share a link, print the page, or save a PNG.',
+    disclaimer:
+      'Generic bracket for a private event. Not affiliated with any league or organizer. Names stay in this browser unless you copy the share link yourself. A very large bracket is easier to share as a PNG than to print.',
+    howToTitle: 'How to use this bracket generator',
+    howTo: [
+      'Type a title if you want one. It is optional and shows above the bracket and on the PNG.',
+      'Paste one name per line. The first line is seed 1. Turn on random seeding if you want the list shuffled when you build.',
+      'Press Build bracket. If the count is not a power of two, the top seeds get a bye and move on without a first-round match.',
+      'Click a name to mark the winner of that match. Click that winner again to take it back. Changing a result clears winners in later rounds that depended on it. Undo steps back one change.',
+      'Press Download PNG for a picture, or Print for a paper copy. In the print dialog, landscape fits a wide bracket better.',
+      'Press Copy share link when you want to send the bracket. The link stores it in the address hash, not on a server. This browser also keeps a copy after you build.',
+    ],
+    sections: [
+      {
+        heading: 'How the bracket is seeded',
+        paragraphs: [
+          'The list order is the seed order, unless you turn on random seeding. Seed 1 is the first name. The draw places seeds so that seed 1 and seed 2 are on opposite sides and would meet in the final if both keep winning.',
+          'Random seeding shuffles the list once, when you press Build bracket. The bracket then treats that shuffled order as the seeds. The text box keeps the list you typed, so you can turn the shuffle off and build again to go back to list order. Building again with random seeding still on draws a new order.',
+        ],
+      },
+      {
+        heading: 'Byes',
+        paragraphs: [
+          'A single-elimination bracket needs a field size of 2, 4, 8, 16, 32, or 64. If you enter another count, the page rounds up to the next of those sizes and fills the empty spots with byes.',
+          'Byes go to the top seeds. A name facing a bye moves to the next round automatically. You do not click it. With 5 names, the field is 8, so 3 byes are added and seeds 1, 2, and 3 advance. Seeds 4 and 5 play each other.',
+        ],
+      },
+      {
+        heading: 'Round names',
+        paragraphs: [
+          'The last round is the Final. The round before that is the Semifinals, and the one before that is the Quarterfinals, when the field is large enough to have them. Earlier rounds are Round 1, Round 2, and so on.',
+          'A 2-name bracket is only the Final. A 4-name bracket is Semifinals and the Final. An 8-name bracket adds the Quarterfinals.',
+        ],
+      },
+      {
+        heading: 'Winners',
+        paragraphs: [
+          'Click either name once both sides of a match are filled in. The winner moves to the next round. The other name stays in place so you can still see who lost.',
+          'Click the highlighted winner to clear that match. Undo puts back the previous set of winners, up to 30 steps in this visit. Clearing winners removes the ones you clicked and leaves byes alone. A later match that had been using the old winner is cleared too, so a new winner does not inherit someone else’s path.',
+        ],
+      },
+      {
+        heading: 'Saving, sharing, and export',
+        paragraphs: [
+          'After you build, the bracket is written to local storage in this browser. A refresh on this device loads it. Reset deletes that copy. A different browser, or cleared site storage, will not have it.',
+          'The share link holds the title, the names, the seeding, and the winners in the URL hash. A hash is not sent to BabelDoc with the page request. Anyone you send the link to can read the names, because that is what the link is for.',
+          'Download PNG draws the bracket onto a picture in this browser and saves the file. It is not a screenshot of a league template. Print opens your browser’s print dialog. The dialog can save a PDF. Wide brackets are scaled down to fit a landscape page width. A 64-name bracket is tall, so the PNG is the cleaner copy.',
+        ],
+      },
+      {
+        heading: 'What this page does not do',
+        paragraphs: [
+          'It does not run a double-elimination bracket, a third-place match, groups, or a series that is first to more than one win. One click advances a name.',
+          'It does not use another organization’s name, logo, or bracket artwork. It does not record scores, only who won the match. It does not store the bracket on a BabelDoc server.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'Names you type are saved in local storage on this device after you build the bracket. They are not sent to BabelDoc. Creating a share link puts those names in the address bar. Copy that link only when you want someone else to see them.',
+          'Analytics, when it is running, records the page without the hash, so the names in a share link are not part of the analytics address. The privacy policy has the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'How many names can I add?',
+        answer:
+          'From 2 to 64. Extra lines past 64 are left out, and the page says so. Blank lines are skipped. A name longer than 48 characters is shortened.',
+      },
+      {
+        question: 'What if I do not have a power-of-two number of names?',
+        answer:
+          'The bracket grows to the next size of 2, 4, 8, 16, 32, or 64. The empty spots are byes. The top seeds face those byes and advance without a click.',
+      },
+      {
+        question: 'How are seeds assigned?',
+        answer:
+          'With random seeding off, the first line is seed 1, the second is seed 2, and so on. Seed 1 and seed 2 are placed on opposite sides of the bracket. With random seeding on, the list is shuffled once each time you build, and that new order becomes the seeds.',
+      },
+      {
+        question: 'Can I change a winner?',
+        answer:
+          'Yes. Click the other name to replace the winner, or click the current winner to clear the match. Either way, winners in later rounds that depended on that match are removed. Undo steps back through those changes for this visit.',
+      },
+      {
+        question: 'Does the page save the bracket?',
+        answer:
+          'Yes, in this browser, after you build or edit it. Reset removes that copy. The save is local storage for this site, not an account. A share link is how you move the same bracket to someone else.',
+      },
+      {
+        question: 'Does the share link upload the names?',
+        answer:
+          'No. The link stores the bracket in the URL hash on your device. BabelDoc does not keep a copy. Sending the link shows the recipient the title, the names, and any winners you marked.',
+      },
+      {
+        question: 'Can I save a picture or print it?',
+        answer:
+          'Yes. Download PNG makes a picture in this browser. Print opens the browser print dialog, where you can choose a printer or Save as PDF. Pick landscape for a wide bracket. For 32 or 64 names, the PNG is the easier file to keep.',
+      },
+      {
+        question: 'Is this an official league bracket?',
+        answer:
+          'No. It is a generic single-elimination bracket for an office pool, an esports night, or a league you run yourself. It is not affiliated with any league or organizer, and it does not use their names or logos.',
+      },
+    ],
+    related: ['super-bowl-squares-generator'],
+    added: '2026-11-23',
+    layout: 'wide',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to build the bracket, record winners, share a link, save it on this device, and download a PNG. You can still read the guide without JavaScript. Printing uses the browser print dialog.',
+    component: TournamentBracket,
   },
 ];
 

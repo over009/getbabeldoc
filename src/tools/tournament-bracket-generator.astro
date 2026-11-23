@@ -1,0 +1,881 @@
+---
+// Single-elimination bracket. Names stay in this browser, or in a share link's hash.
+---
+
+<div data-bracket class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <p class="text-sm leading-6 text-muted">
+    Generic single-elimination bracket for an office pool, an esports night, or a sports league you run. Not affiliated with any league.
+  </p>
+
+  <div class="no-print mt-4">
+    <label for="bracket-title" class="block text-sm font-semibold">Bracket title</label>
+    <input
+      id="bracket-title"
+      class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+      type="text"
+      maxlength="80"
+      data-field="title"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="Optional"
+    />
+  </div>
+
+  <div class="no-print mt-4">
+    <label for="bracket-names" class="block text-sm font-semibold">Names</label>
+    <textarea
+      id="bracket-names"
+      class="mt-1 min-h-40 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-6 text-ink"
+      rows="8"
+      data-field="source"
+      placeholder={'River\nHarbor\nNorth\nSouth\nEast\nWest\nCentral\nLakes'}
+      autocomplete="off"
+      spellcheck="false"
+    ></textarea>
+    <p id="bracket-names-help" data-name-count class="mt-2 text-sm leading-6 text-muted">
+      One name per line. The first line is seed 1 unless you turn on random seeding. Use 2 to 64 names.
+    </p>
+    <label class="mt-3 flex items-start gap-2 text-sm leading-6">
+      <input class="mt-1" type="checkbox" data-field="shuffle" />
+      <span>Random seeding. Shuffle the list when the bracket is built. Seed 1 is then the first name in that draw.</span>
+    </label>
+  </div>
+
+  <div class="no-print mt-4 flex flex-wrap gap-2">
+    <button type="button" data-action="build" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Build bracket
+    </button>
+    <button type="button" data-action="reset" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Reset
+    </button>
+  </div>
+
+  <div data-results class="mt-6" hidden>
+    <p data-bracket-title class="font-serif text-2xl text-ink"></p>
+    <p data-champion class="mt-2 rounded-md bg-soft px-3 py-2 font-serif text-xl text-ink">Champion: not decided yet</p>
+    <p data-meta class="mt-2 text-sm leading-6 text-muted"></p>
+    <p class="no-print mt-2 text-sm leading-6 text-muted">
+      Click a name to mark the winner of that match. Click the winner again to undo it. Later rounds that used that result are cleared. Scroll sideways to see later rounds.
+    </p>
+
+    <div data-bracket-scroll class="bd-bracket-scroll mt-3 max-w-full overflow-x-auto pb-2">
+      <div data-print-sizer>
+        <div data-board role="group" aria-label="Single-elimination bracket"></div>
+      </div>
+    </div>
+
+    <div class="no-print mt-4 flex flex-wrap gap-2">
+      <button type="button" data-action="undo" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper disabled:opacity-40" disabled>
+        Undo
+      </button>
+      <button type="button" data-action="clear-winners" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Clear winners
+      </button>
+      <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download PNG
+      </button>
+      <button type="button" data-action="print" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Print
+      </button>
+      <button type="button" data-action="share" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Copy share link
+      </button>
+      <button type="button" data-action="restore" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper" hidden>
+        Restore the bracket saved on this device
+      </button>
+    </div>
+    <a data-share-anchor class="no-print mt-3 block break-all text-sm text-accent underline-offset-4 hover:underline" href="/tools/tournament-bracket-generator/" hidden></a>
+    <input data-share-url class="no-print mt-3 w-full rounded-md border border-line bg-paper px-3 py-2 text-sm text-ink" type="text" readonly hidden aria-label="Share link" />
+  </div>
+
+  <p data-save-state class="mt-4 text-sm leading-6 text-muted">A bracket is saved on this device after you build it.</p>
+  <p data-status class="mt-1 text-sm leading-6" aria-live="polite"></p>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to build the bracket, save it on this device, and export a PNG. The guide further down this page stays readable either way.
+    </p>
+  </noscript>
+</div>
+
+<script is:inline>
+  document.documentElement.dataset.bracketPage = 'true';
+</script>
+
+<style>
+  :global(.bd-bracket-board) {
+    position: relative;
+  }
+
+  :global(.bd-bracket-lines) {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  :global(.bd-bracket-round) {
+    position: absolute;
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+  }
+
+  :global(.bd-bracket-match) {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e4dcd0;
+    border-radius: 0.375rem;
+    background: #fff;
+    z-index: 1;
+  }
+
+  :global(.bd-bracket-slot) {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    min-height: 0;
+    padding: 0 0.45rem;
+    text-align: left;
+  }
+
+  :global(.bd-bracket-slot + .bd-bracket-slot) {
+    border-top: 1px solid #e4dcd0;
+  }
+
+  :global(button.bd-bracket-slot) {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :global(button.bd-bracket-slot:hover) {
+    background: #f3ebe3;
+  }
+
+  :global(.bd-bracket-winner),
+  :global(button.bd-bracket-slot.bd-bracket-winner) {
+    background: #f6e4d8;
+    font-weight: 600;
+    box-shadow: inset 4px 0 0 #7c2d12;
+  }
+
+  :global(button.bd-bracket-slot.bd-bracket-winner:hover) {
+    background: #f0d2c2;
+  }
+
+  :global(.bd-bracket-seed) {
+    width: 1.25rem;
+    flex: none;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    color: #44403c;
+  }
+
+  :global(.bd-bracket-name) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :global(.bd-bracket-muted) {
+    color: #44403c;
+  }
+
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    :global(.bd-bracket-scroll) {
+      overflow: visible !important;
+    }
+
+    :global(html[data-bracket-page] header),
+    :global(html[data-bracket-page] footer),
+    :global(html[data-bracket-page] .ad-slot),
+    :global(html[data-bracket-page] article > nav),
+    :global(html[data-bracket-page] article > header p),
+    :global(html[data-bracket-page] article > section),
+    :global(html[data-bracket-page] .tool-disclaimer) {
+      display: none !important;
+    }
+
+    :global(html[data-bracket-page] body) {
+      background: #fff !important;
+    }
+
+    :global(html[data-bracket-page] main) {
+      max-width: none !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+    }
+
+    :global(html[data-bracket-page] article) {
+      max-width: none !important;
+    }
+
+    :global(html[data-bracket-page] h1) {
+      font-size: 18pt !important;
+    }
+  }
+
+  @page {
+    size: landscape;
+    margin: 0.45in;
+  }
+</style>
+
+<script>
+  import {
+    MAX_ENTRANTS,
+    SOURCE_LIMIT,
+    TITLE_LIMIT,
+    applyWinner,
+    boardSize,
+    bracketSize,
+    encodeHashPayload,
+    entrantsFromSource,
+    matchPosition,
+    parseState,
+    projectBracket,
+    roundLabel,
+    shuffleNames,
+    stateFromHash,
+    statesEqual,
+    type BracketState,
+    type MatchView,
+    type Slot,
+  } from '../lib/tournament-bracket';
+
+  const storageKey = 'babeldoc.tournament-bracket-generator';
+
+  function randomBelow(limit: number): number {
+    if (limit <= 1) return 0;
+    const max = Math.floor(0x1_0000_0000 / limit) * limit;
+    const buffer = new Uint32Array(1);
+    let value = 0;
+    do {
+      crypto.getRandomValues(buffer);
+      value = buffer[0] ?? 0;
+    } while (value >= max);
+    return value % limit;
+  }
+
+  function readStore(): BracketState | null {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return null;
+      return parseState(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStore(state: BracketState): boolean {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function namesEqual(left: readonly string[], right: readonly string[]): boolean {
+    return left.length === right.length && left.every((name, index) => name === right[index]);
+  }
+
+  function fileName(title: string): string {
+    const base = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48);
+    return `${base || 'tournament-bracket'}.png`;
+  }
+
+  function slotWords(slot: Slot): string {
+    if (slot.kind === 'player') return `${slot.name}, seed ${slot.seed}`;
+    if (slot.kind === 'bye') return 'Bye';
+    return 'To be decided';
+  }
+
+  function ellipsis(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let out = text;
+    while (out.length > 1 && ctx.measureText(`${out}…`).width > maxWidth) out = out.slice(0, -1);
+    return `${out}…`;
+  }
+
+  const roots = document.querySelectorAll<HTMLElement>('[data-bracket]');
+
+  for (const root of roots) {
+    const titleInput = root.querySelector('[data-field="title"]');
+    const sourceInput = root.querySelector('[data-field="source"]');
+    const shuffleInput = root.querySelector('[data-field="shuffle"]');
+    const nameCount = root.querySelector('[data-name-count]');
+    const results = root.querySelector('[data-results]');
+    const titleOut = root.querySelector('[data-bracket-title]');
+    const championOut = root.querySelector('[data-champion]');
+    const metaOut = root.querySelector('[data-meta]');
+    const scroll = root.querySelector('[data-bracket-scroll]');
+    const sizer = root.querySelector('[data-print-sizer]');
+    const board = root.querySelector('[data-board]');
+    const saveState = root.querySelector('[data-save-state]');
+    const status = root.querySelector('[data-status]');
+    const shareAnchor = root.querySelector('[data-share-anchor]');
+    const shareUrl = root.querySelector('[data-share-url]');
+    const undoButton = root.querySelector('[data-action="undo"]');
+    const restoreButton = root.querySelector('[data-action="restore"]');
+
+    if (
+      !(titleInput instanceof HTMLInputElement) ||
+      !(sourceInput instanceof HTMLTextAreaElement) ||
+      !(shuffleInput instanceof HTMLInputElement) ||
+      !(nameCount instanceof HTMLElement) ||
+      !(results instanceof HTMLElement) ||
+      !(titleOut instanceof HTMLElement) ||
+      !(championOut instanceof HTMLElement) ||
+      !(metaOut instanceof HTMLElement) ||
+      !(scroll instanceof HTMLElement) ||
+      !(sizer instanceof HTMLElement) ||
+      !(board instanceof HTMLElement) ||
+      !(saveState instanceof HTMLElement) ||
+      !(status instanceof HTMLElement) ||
+      !(shareAnchor instanceof HTMLAnchorElement) ||
+      !(shareUrl instanceof HTMLInputElement) ||
+      !(undoButton instanceof HTMLButtonElement) ||
+      !(restoreButton instanceof HTMLButtonElement)
+    ) {
+      continue;
+    }
+
+    let state: BracketState | null = null;
+    let hashActive = false;
+    let stashed: BracketState | null = null;
+    let saveTimer = 0;
+    const undoStack: Record<string, 0 | 1>[] = [];
+
+    const setStatus = (message: string) => {
+      status.textContent = message;
+    };
+
+    const shareUrlFor = (current: BracketState): string => {
+      const hash = `b=${encodeHashPayload(current)}`;
+      return `${location.origin}${location.pathname}${location.search}#${hash}`;
+    };
+
+    const showShareUrl = (url: string, selectInput: boolean) => {
+      shareAnchor.href = url;
+      shareAnchor.textContent = url;
+      shareAnchor.hidden = false;
+      shareUrl.value = url;
+      shareUrl.hidden = !selectInput;
+      if (selectInput) {
+        shareUrl.hidden = false;
+        shareUrl.focus();
+        shareUrl.select();
+      }
+    };
+
+    const refreshShareLink = (current: BracketState) => {
+      if (shareAnchor.hidden && shareUrl.hidden) return;
+      const url = shareUrlFor(current);
+      shareAnchor.href = url;
+      if (!shareAnchor.hidden) shareAnchor.textContent = url;
+      shareUrl.value = url;
+    };
+
+    const writeHash = (current: BracketState) => {
+      const hash = `#b=${encodeHashPayload(current)}`;
+      if (location.hash !== hash) history.replaceState(null, '', hash);
+      refreshShareLink(current);
+    };
+
+    const saveNow = () => {
+      if (!state) return;
+      const saved = writeStore(state);
+      saveState.textContent = saved
+        ? 'Saved on this device.'
+        : 'This browser could not save the bracket. Copy a share link if you need a backup.';
+      if (hashActive) writeHash(state);
+    };
+
+    const scheduleSave = () => {
+      window.clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(saveNow, 200);
+    };
+
+    const updateNameCount = () => {
+      const parsed = entrantsFromSource(sourceInput.value);
+      if (parsed.names.length === 0) {
+        nameCount.textContent = 'One name per line. The first line is seed 1 unless you turn on random seeding. Use 2 to 64 names.';
+        return;
+      }
+      const noun = parsed.names.length === 1 ? 'name' : 'names';
+      const extra = parsed.dropped > 0 ? ` Only the first ${MAX_ENTRANTS} will be used.` : '';
+      nameCount.textContent = `${parsed.names.length} ${noun} ready.${extra}`;
+    };
+
+    const renderSlot = (match: MatchView, side: 0 | 1): HTMLElement => {
+      const slot = side === 0 ? match.a : match.b;
+      const won = match.winner === side;
+      const playable = match.a.kind === 'player' && match.b.kind === 'player';
+      const row = playable ? document.createElement('button') : document.createElement('div');
+      row.className = won ? 'bd-bracket-slot bd-bracket-winner' : 'bd-bracket-slot';
+      if (row instanceof HTMLButtonElement) {
+        row.type = 'button';
+        row.dataset.side = String(side);
+        row.setAttribute('aria-pressed', won ? 'true' : 'false');
+      }
+      if (slot.kind === 'player') {
+        const seed = document.createElement('span');
+        seed.className = 'bd-bracket-seed';
+        seed.textContent = String(slot.seed);
+        const name = document.createElement('span');
+        name.className = 'bd-bracket-name';
+        name.textContent = slot.name;
+        name.title = slot.name;
+        row.append(seed, name);
+        if (row instanceof HTMLButtonElement) {
+          row.setAttribute('aria-label', won ? `${slot.name}, seed ${slot.seed}, winner` : `${slot.name}, seed ${slot.seed}`);
+        }
+      } else {
+        const text = document.createElement('span');
+        text.className = 'bd-bracket-muted';
+        text.textContent = slot.kind === 'bye' ? 'Bye' : 'TBD';
+        row.append(text);
+      }
+      return row;
+    };
+
+    const renderBoard = () => {
+      undoButton.disabled = undoStack.length === 0;
+      if (!state) {
+        results.hidden = true;
+        board.replaceChildren();
+        return;
+      }
+      const projected = projectBracket(state.names, state.winners);
+      const layout = boardSize(projected.roundCount, projected.rounds[0]?.length ?? 1);
+      results.hidden = false;
+      titleOut.textContent = state.title.trim() || 'Tournament bracket';
+      championOut.textContent = projected.champion ? `Champion: ${projected.champion.name}` : 'Champion: not decided yet';
+      const summary = bracketSize(state.names.length);
+      const byeText =
+        summary.byes === 0
+          ? 'The first round has no byes.'
+          : `${summary.byes} ${summary.byes === 1 ? 'bye was' : 'byes were'} added so the top ${summary.byes === 1 ? 'seed advances' : 'seeds advance'}.`;
+      const shuffleText = state.shuffled ? ' Random seeding is on, so seed 1 is the first name in the draw.' : ' Seed 1 is the first line.';
+      metaOut.textContent = `${state.names.length} names in a field of ${summary.size}. ${byeText}${shuffleText}`;
+
+      board.replaceChildren();
+      board.className = 'bd-bracket-board';
+      board.style.width = `${layout.width}px`;
+      board.style.height = `${layout.height}px`;
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'bd-bracket-lines');
+      svg.setAttribute('width', String(layout.width));
+      svg.setAttribute('height', String(layout.height));
+      svg.setAttribute('aria-hidden', 'true');
+      projected.rounds.forEach((matches, round) => {
+        if (round >= projected.roundCount - 1) return;
+        for (const match of matches) {
+          const from = matchPosition(round, match.index);
+          const to = matchPosition(round + 1, Math.floor(match.index / 2));
+          const x1 = from.left + from.width;
+          const y1 = from.top + from.height / 2;
+          const x2 = to.left;
+          const y2 = to.top + to.height / 2;
+          const mid = (x1 + x2) / 2;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', `M ${x1} ${y1} H ${mid} V ${y2} H ${x2}`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', '#cbbba8');
+          path.setAttribute('stroke-width', '2');
+          svg.append(path);
+        }
+      });
+      board.append(svg);
+
+      projected.rounds.forEach((matches, round) => {
+        const heading = document.createElement('p');
+        heading.className = 'bd-bracket-round';
+        const anchor = matchPosition(round, 0);
+        heading.style.left = `${anchor.left}px`;
+        heading.style.top = '0';
+        heading.style.width = `${anchor.width}px`;
+        heading.textContent = roundLabel(round, projected.roundCount);
+        board.append(heading);
+
+        for (const match of matches) {
+          const pos = matchPosition(round, match.index);
+          const card = document.createElement('div');
+          card.className = 'bd-bracket-match';
+          card.dataset.match = match.key;
+          card.style.left = `${pos.left}px`;
+          card.style.top = `${pos.top}px`;
+          card.style.width = `${pos.width}px`;
+          card.style.height = `${pos.height}px`;
+          card.setAttribute('role', 'group');
+          card.setAttribute(
+            'aria-label',
+            `${roundLabel(round, projected.roundCount)}, match ${match.index + 1}. ${slotWords(match.a)} versus ${slotWords(match.b)}.`,
+          );
+          card.append(renderSlot(match, 0), renderSlot(match, 1));
+          board.append(card);
+        }
+      });
+    };
+
+    const paint = (current: BracketState): HTMLCanvasElement | null => {
+      const projected = projectBracket(current.names, current.winners);
+      const layout = boardSize(projected.roundCount, projected.rounds[0]?.length ?? 1);
+      const header = 86;
+      const footer = 28;
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(layout.width * scale);
+      canvas.height = Math.ceil((header + layout.height + footer) * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+      ctx.scale(scale, scale);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, layout.width, header + layout.height + footer);
+      ctx.fillStyle = '#1c1917';
+      ctx.font = '600 22px Georgia, Palatino, serif';
+      ctx.fillText(ellipsis(ctx, current.title.trim() || 'Tournament bracket', layout.width - 16), 8, 30);
+      ctx.font = '600 16px Georgia, Palatino, serif';
+      const champion = projected.champion ? `Champion: ${projected.champion.name}` : 'Champion: not decided yet';
+      ctx.fillText(ellipsis(ctx, champion, layout.width - 16), 8, 56);
+      ctx.font = '13px "Segoe UI", system-ui, sans-serif';
+      ctx.fillStyle = '#44403c';
+      ctx.fillText('Single elimination. Not an official league bracket.', 8, 76);
+
+      ctx.save();
+      ctx.translate(0, header);
+      ctx.strokeStyle = '#cbbba8';
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      projected.rounds.forEach((matches, round) => {
+        if (round >= projected.roundCount - 1) return;
+        for (const match of matches) {
+          const from = matchPosition(round, match.index);
+          const to = matchPosition(round + 1, Math.floor(match.index / 2));
+          const x1 = from.left + from.width;
+          const y1 = from.top + from.height / 2;
+          const x2 = to.left;
+          const y2 = to.top + to.height / 2;
+          const mid = (x1 + x2) / 2;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(mid, y1);
+          ctx.lineTo(mid, y2);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      });
+      ctx.font = '600 13px "Segoe UI", system-ui, sans-serif';
+      ctx.fillStyle = '#1c1917';
+      for (let round = 0; round < projected.rounds.length; round += 1) {
+        const pos = matchPosition(round, 0);
+        ctx.fillText(roundLabel(round, projected.roundCount), pos.left, 18);
+      }
+      for (const matches of projected.rounds) {
+        for (const match of matches) {
+          const pos = matchPosition(match.round, match.index);
+          const half = pos.height / 2;
+          ([0, 1] as const).forEach((side) => {
+            const slot = side === 0 ? match.a : match.b;
+            const y = pos.top + side * half;
+            const won = match.winner === side;
+            ctx.fillStyle = won ? '#f6e4d8' : '#ffffff';
+            ctx.fillRect(pos.left, y, pos.width, half);
+            if (won) {
+              ctx.fillStyle = '#7c2d12';
+              ctx.fillRect(pos.left, y, 4, half);
+            }
+            ctx.strokeStyle = '#e4dcd0';
+            ctx.strokeRect(pos.left + 0.5, y + 0.5, pos.width - 1, half - 1);
+            if (slot.kind === 'player') {
+              ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+              ctx.fillStyle = '#44403c';
+              ctx.fillText(String(slot.seed), pos.left + 10, y + half / 2 + 4);
+              ctx.font = won ? '600 14px "Segoe UI", system-ui, sans-serif' : '14px "Segoe UI", system-ui, sans-serif';
+              ctx.fillStyle = '#1c1917';
+              ctx.fillText(ellipsis(ctx, slot.name, pos.width - 40), pos.left + 30, y + half / 2 + 5);
+            } else {
+              ctx.font = '14px "Segoe UI", system-ui, sans-serif';
+              ctx.fillStyle = '#44403c';
+              ctx.fillText(slot.kind === 'bye' ? 'Bye' : 'TBD', pos.left + 10, y + half / 2 + 5);
+            }
+          });
+        }
+      }
+      ctx.restore();
+      ctx.font = '12px "Segoe UI", system-ui, sans-serif';
+      ctx.fillStyle = '#44403c';
+      ctx.fillText('getbabeldoc.com', 8, header + layout.height + 18);
+      return canvas;
+    };
+
+    const apply = (next: BracketState) => {
+      state = next;
+      titleInput.value = next.title;
+      sourceInput.value = next.source;
+      shuffleInput.checked = next.shuffled;
+      undoStack.length = 0;
+      updateNameCount();
+      renderBoard();
+    };
+
+    const rememberWinners = () => {
+      if (!state) return;
+      undoStack.push({ ...state.winners });
+      if (undoStack.length > 30) undoStack.shift();
+    };
+
+    const fitPrint = () => {
+      const width = board.offsetWidth;
+      const height = board.offsetHeight;
+      if (!width || !height) return;
+      const scale = Math.min(1, (10 * 96) / width);
+      board.style.transform = `scale(${scale})`;
+      board.style.transformOrigin = 'top left';
+      sizer.style.width = `${width * scale}px`;
+      sizer.style.height = `${height * scale}px`;
+    };
+
+    const clearPrintFit = () => {
+      board.style.transform = '';
+      board.style.transformOrigin = '';
+      sizer.style.width = '';
+      sizer.style.height = '';
+    };
+
+    sourceInput.addEventListener('input', updateNameCount);
+    titleInput.addEventListener('input', () => {
+      if (!state) return;
+      state = { ...state, title: titleInput.value.slice(0, TITLE_LIMIT) };
+      titleOut.textContent = state.title.trim() || 'Tournament bracket';
+      scheduleSave();
+    });
+
+    root.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+
+      const slotButton = target.closest('button[data-side]');
+      const card = slotButton?.closest<HTMLElement>('[data-match]');
+      if (slotButton instanceof HTMLButtonElement && card && state && root.contains(slotButton)) {
+        const key = card.dataset.match;
+        if (!key) return;
+        const side = slotButton.dataset.side === '1' ? 1 : 0;
+        const nextSide = state.winners[key] === side ? null : side;
+        rememberWinners();
+        state = { ...state, winners: applyWinner(state.names, state.winners, key, nextSide) };
+        renderBoard();
+        scheduleSave();
+        const projected = projectBracket(state.names, state.winners);
+        const match = projected.rounds.flat().find((item) => item.key === key);
+        if (nextSide === null) setStatus('Cleared that match. Later results that used it were cleared too.');
+        else if (match?.advanced?.kind === 'player') setStatus(`${match.advanced.name} advances.`);
+        return;
+      }
+
+      const button = target.closest('[data-action]');
+      if (!(button instanceof HTMLButtonElement) || !root.contains(button)) return;
+      const action = button.dataset.action;
+
+      if (action === 'build') {
+        const parsed = entrantsFromSource(sourceInput.value);
+        if (parsed.names.length < 2) {
+          setStatus('Add at least 2 names, one per line.');
+          return;
+        }
+        const shuffling = shuffleInput.checked;
+        const nextNames = shuffling ? shuffleNames(parsed.names, randomBelow) : parsed.names;
+        const sameDraw = Boolean(state && !shuffling && namesEqual(state.names, nextNames));
+        const marked = state ? Object.keys(state.winners).length > 0 : false;
+        if (marked && !sameDraw && !window.confirm('Build a new bracket? Winners you already picked will be cleared.')) return;
+        const built: BracketState = {
+          v: 1,
+          title: titleInput.value.slice(0, TITLE_LIMIT),
+          source: sourceInput.value.slice(0, SOURCE_LIMIT),
+          shuffled: shuffling,
+          names: sameDraw && state ? state.names : nextNames,
+          winners: sameDraw && state ? state.winners : {},
+        };
+        if (!sameDraw) undoStack.length = 0;
+        state = built;
+        updateNameCount();
+        renderBoard();
+        scheduleSave();
+        const summary = bracketSize(built.names.length);
+        const bye =
+          summary.byes === 0
+            ? 'No byes.'
+            : `${summary.byes} ${summary.byes === 1 ? 'bye' : 'byes'} for the top ${summary.byes === 1 ? 'seed' : 'seeds'}.`;
+        const dropped = parsed.dropped > 0 ? ` Used the first ${MAX_ENTRANTS} names.` : '';
+        const shuffledNote = shuffling ? ' Shuffled the names first.' : '';
+        setStatus(`Built a bracket for ${built.names.length} names. ${bye}${dropped}${shuffledNote}`);
+        return;
+      }
+
+      if (action === 'undo') {
+        const previous = undoStack.pop();
+        if (!state || !previous) return;
+        state = { ...state, winners: previous };
+        renderBoard();
+        scheduleSave();
+        setStatus('Undid the last winner change.');
+        return;
+      }
+
+      if (action === 'clear-winners') {
+        if (!state || Object.keys(state.winners).length === 0) {
+          setStatus('No winners are marked. Byes still advance on their own.');
+          return;
+        }
+        rememberWinners();
+        state = { ...state, winners: {} };
+        renderBoard();
+        scheduleSave();
+        setStatus('Cleared the winners you marked. Byes still advance.');
+        return;
+      }
+
+      if (action === 'png') {
+        if (!state) return;
+        const canvas = paint(state);
+        const downloadName = fileName(state.title);
+        if (!canvas) {
+          setStatus('Could not create the PNG in this browser.');
+          return;
+        }
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = downloadName;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+          setStatus('Downloaded a PNG of this bracket.');
+        }, 'image/png');
+        return;
+      }
+
+      if (action === 'print') {
+        fitPrint();
+        window.print();
+        return;
+      }
+
+      if (action === 'share') {
+        if (!state) return;
+        hashActive = true;
+        const url = shareUrlFor(state);
+        writeHash(state);
+        const saved = writeStore(state);
+        saveState.textContent = saved ? 'Saved on this device.' : 'This browser could not save the bracket.';
+        const clipboard = navigator.clipboard;
+        if (!clipboard?.writeText) {
+          showShareUrl(url, true);
+          setStatus('Copy the link shown here. It stores this bracket in the link hash and does not upload it.');
+          return;
+        }
+        void clipboard.writeText(url).then(
+          () => {
+            showShareUrl(url, false);
+            setStatus('Share link copied. It stores this bracket in the link hash and does not upload it.');
+          },
+          () => {
+            showShareUrl(url, true);
+            setStatus('Copy the link shown here. It stores this bracket in the link hash and does not upload it.');
+          },
+        );
+        return;
+      }
+
+      if (action === 'restore') {
+        if (!stashed) return;
+        hashActive = false;
+        history.replaceState(null, '', `${location.pathname}${location.search}`);
+        apply(stashed);
+        const saved = writeStore(stashed);
+        stashed = null;
+        restoreButton.hidden = true;
+        shareAnchor.hidden = true;
+        shareUrl.hidden = true;
+        shareUrl.value = '';
+        saveState.textContent = saved ? 'Saved on this device.' : 'This browser could not save the bracket.';
+        setStatus('Restored the bracket that was saved on this device.');
+        return;
+      }
+
+      if (action === 'reset') {
+        if (!window.confirm('Reset the bracket? This removes the names, the winners, and the copy saved in this browser.')) return;
+        state = null;
+        hashActive = false;
+        stashed = null;
+        undoStack.length = 0;
+        restoreButton.hidden = true;
+        history.replaceState(null, '', `${location.pathname}${location.search}`);
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {
+          // Storage can be blocked. The form still resets.
+        }
+        titleInput.value = '';
+        sourceInput.value = '';
+        shuffleInput.checked = false;
+        shareAnchor.hidden = true;
+        shareUrl.hidden = true;
+        shareUrl.value = '';
+        updateNameCount();
+        renderBoard();
+        saveState.textContent = 'A bracket is saved on this device after you build it.';
+        setStatus('Reset the bracket and removed the copy saved in this browser.');
+      }
+    });
+
+    window.addEventListener('beforeprint', fitPrint);
+    window.addEventListener('afterprint', clearPrintFit);
+
+    const stored = readStore();
+    const shared = stateFromHash(location.hash);
+    if (shared) {
+      hashActive = true;
+      if (stored && !statesEqual(stored, shared)) {
+        stashed = stored;
+        restoreButton.hidden = false;
+      }
+      apply(shared);
+      showShareUrl(shareUrlFor(shared), false);
+      setStatus('Opened this bracket from the share link. Your saved bracket stays put until you edit or restore it.');
+    } else if (location.hash.startsWith('#b=')) {
+      if (stored) {
+        apply(stored);
+        setStatus('This share link could not be read. Loaded the bracket saved in this browser.');
+      } else {
+        setStatus('This share link could not be read. Add names and build a bracket.');
+      }
+    } else if (stored) {
+      apply(stored);
+      setStatus('Loaded the bracket saved in this browser.');
+    }
+  }
+</script>

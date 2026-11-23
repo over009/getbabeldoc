@@ -3,12 +3,13 @@ import type { ToolFaq } from '../data/registry';
 
 interface Props {
   items: ToolFaq[];
+  class?: string;
 }
 
-const { items } = Astro.props;
+const { items, class: className } = Astro.props;
 ---
 
-<section id="faq" class="mt-12">
+<section id="faq" class:list={['mt-12', className]}>
   <h2 class="font-serif text-2xl text-ink">Frequently asked questions</h2>
   <div class="mt-4 space-y-6">
     {
