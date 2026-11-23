@@ -1,0 +1,384 @@
+---
+import ExportConfirm from '../components/ExportConfirm.astro';
+import EarlyBird from '../components/EarlyBird.astro';
+
+// Org chart. Rows stay in this browser. The tree is built from the names you enter.
+---
+
+<div data-org class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <p class="text-sm leading-6 text-muted">
+    Every box can be traced to a row in this list, and the chart is computed in this browser. A file you open is copied into the box and is not uploaded.
+  </p>
+
+  <div class="no-print mt-4">
+    <label for="org-rows" class="block text-sm font-semibold">Names, titles, and managers</label>
+    <textarea
+      id="org-rows"
+      class="mt-1 min-h-40 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 font-mono text-sm leading-6 text-ink"
+      rows="8"
+      data-field="rows"
+      placeholder={'Name, Title, Manager\nAvery Chen, Director,\nBlake Ortiz, Programs Lead, Avery Chen'}
+      autocomplete="off"
+      spellcheck="false"
+    ></textarea>
+    <p class="mt-2 text-sm leading-6 text-muted">One person per row: name, title, then the manager’s name. Leave the manager blank for the person at the top.</p>
+  </div>
+
+  <div class="no-print mt-4 flex flex-wrap items-center gap-3">
+    <label class="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Upload CSV
+      <input class="sr-only" type="file" accept=".csv,text/csv,text/plain,.txt" data-field="file" />
+    </label>
+    <label class="flex items-center gap-2 text-sm leading-6">
+      <input type="checkbox" data-field="header" checked />
+      First row is column names
+    </label>
+  </div>
+  <p class="no-print mt-2 text-sm leading-6 text-muted">A file never leaves this browser. It is copied into the box so you can see every row.</p>
+
+  <div class="no-print mt-4 flex flex-wrap gap-2">
+    <button type="button" data-action="generate" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Generate
+    </button>
+    <button type="button" data-action="sample" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Load sample
+    </button>
+  </div>
+
+  <div data-results class="mt-6" hidden>
+    <p data-summary class="text-sm leading-6 text-muted"></p>
+    <p class="no-print mt-2 text-sm leading-6 text-muted">Click a person to hide or show the people who report to them.</p>
+    <div class="mt-4" role="region" aria-labelledby="org-checks-title">
+      <p id="org-checks-title" class="font-serif text-xl text-ink">Check panel</p>
+      <ul data-checks class="mt-3 space-y-2 text-sm leading-6"></ul>
+    </div>
+    <div data-scroll class="mt-3 max-w-full overflow-auto rounded-md border border-line bg-white">
+      <svg data-chart xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Org chart"></svg>
+    </div>
+    <div class="no-print mt-4 flex flex-wrap gap-2">
+      <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download PNG
+      </button>
+      <button type="button" data-action="svg" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download SVG
+      </button>
+    </div>
+    <ExportConfirm />
+    <EarlyBird />
+  </div>
+
+  <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to draw the chart and export a PNG or SVG. The guide further down this page stays readable either way.
+    </p>
+  </noscript>
+</div>
+
+<script is:inline>
+  document.documentElement.dataset.orgPage = 'true';
+</script>
+
+<style>
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    :global(html[data-org-page] header),
+    :global(html[data-org-page] footer),
+    :global(html[data-org-page] .ad-slot),
+    :global(html[data-org-page] article > nav),
+    :global(html[data-org-page] article > header p),
+    :global(html[data-org-page] article > section),
+    :global(html[data-org-page] .tool-disclaimer) {
+      display: none !important;
+    }
+
+    :global(html[data-org-page] [data-scroll]) {
+      overflow: visible !important;
+    }
+
+    :global(html[data-org-page] body) {
+      background: #fff !important;
+    }
+  }
+</style>
+
+<script>
+  import { downloadBlob, downloadText, serializeSvg, svgToPngBlob } from '../lib/download';
+  import { failedReasons, trackChart, watchChartInput } from '../lib/analytics';
+  import { bindEarlyBird } from '../lib/early-bird';
+  import { bindExportConfirm, blockingMessages } from '../lib/export-confirm';
+  import {
+    SAMPLE_ORG,
+    buildOrg,
+    layoutOrg,
+    orgHeaderLikely,
+    type OrgModel,
+  } from '../lib/org-chart';
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const root = document.querySelector('[data-org]');
+
+  if (root) {
+    const rows = root.querySelector('[data-field="rows"]');
+    const fileInput = root.querySelector('[data-field="file"]');
+    const headerBox = root.querySelector('[data-field="header"]');
+    const results = root.querySelector('[data-results]');
+    const summary = root.querySelector('[data-summary]');
+    const svg = root.querySelector('[data-chart]');
+    const checks = root.querySelector('[data-checks]');
+    const status = root.querySelector('[data-status]');
+
+    if (
+      rows instanceof HTMLTextAreaElement &&
+      fileInput instanceof HTMLInputElement &&
+      headerBox instanceof HTMLInputElement &&
+      results instanceof HTMLElement &&
+      summary instanceof HTMLElement &&
+      svg instanceof SVGSVGElement &&
+      checks instanceof HTMLElement &&
+      status instanceof HTMLElement
+    ) {
+      let model: OrgModel | null = null;
+      const collapsed = new Set<string>();
+      let headerTouched = false;
+      const tool = 'ai-org-chart-generator';
+      const rowInput = watchChartInput(tool, rows);
+      const earlyBird = bindEarlyBird(root, tool);
+
+      const setStatus = (message: string) => {
+        status.textContent = message;
+      };
+
+      const clip = (value: string, max: number) => (value.length > max ? `${value.slice(0, max - 1)}…` : value);
+
+      const render = () => {
+        if (!model || model.blocked) return;
+        const layout = layoutOrg(model.children, model.roots, collapsed);
+        const byId = new Map(model.people.map((person) => [person.id, person]));
+        svg.setAttribute('width', String(layout.width));
+        svg.setAttribute('height', String(layout.height));
+        svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
+        svg.replaceChildren();
+
+        const background = document.createElementNS(NS, 'rect');
+        background.setAttribute('width', String(layout.width));
+        background.setAttribute('height', String(layout.height));
+        background.setAttribute('fill', '#ffffff');
+        svg.append(background);
+
+        for (const segment of layout.segments) {
+          const line = document.createElementNS(NS, 'line');
+          line.setAttribute('x1', String(segment.x1));
+          line.setAttribute('y1', String(segment.y1));
+          line.setAttribute('x2', String(segment.x2));
+          line.setAttribute('y2', String(segment.y2));
+          line.setAttribute('stroke', '#cbbba8');
+          line.setAttribute('stroke-width', '2');
+          svg.append(line);
+        }
+
+        for (const box of layout.boxes) {
+          const person = byId.get(box.id);
+          if (!person) continue;
+          const group = document.createElementNS(NS, 'g');
+          group.dataset.person = box.id;
+          group.setAttribute('tabindex', '0');
+          group.setAttribute('role', 'button');
+          group.setAttribute('aria-expanded', box.hasChildren ? String(!box.collapsed) : 'true');
+          const label = person.title ? `${person.name}, ${person.title}` : person.name;
+          group.setAttribute('aria-label', box.hasChildren ? `${label}. ${box.collapsed ? 'Show' : 'Hide'} the people under them.` : label);
+          const title = document.createElementNS(NS, 'title');
+          title.textContent = person.title ? `${person.name} — ${person.title}` : person.name;
+          const rect = document.createElementNS(NS, 'rect');
+          rect.setAttribute('x', String(box.x));
+          rect.setAttribute('y', String(box.y));
+          rect.setAttribute('width', String(box.w));
+          rect.setAttribute('height', String(box.h));
+          rect.setAttribute('rx', '8');
+          rect.setAttribute('fill', '#ffffff');
+          rect.setAttribute('stroke', '#7c2d12');
+          const name = document.createElementNS(NS, 'text');
+          name.setAttribute('x', String(box.x + 12));
+          name.setAttribute('y', String(box.y + (person.title ? 30 : 40)));
+          name.setAttribute('fill', '#1c1917');
+          name.setAttribute('font-size', '15');
+          name.setAttribute('font-weight', '600');
+          name.setAttribute('font-family', 'Georgia, Palatino, serif');
+          name.textContent = clip(person.name, 24);
+          group.append(title, rect, name);
+          if (person.title) {
+            const role = document.createElementNS(NS, 'text');
+            role.setAttribute('x', String(box.x + 12));
+            role.setAttribute('y', String(box.y + 50));
+            role.setAttribute('fill', '#44403c');
+            role.setAttribute('font-size', '12');
+            role.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+            role.textContent = clip(person.title, 28);
+            group.append(role);
+          }
+          if (box.hasChildren) {
+            const mark = document.createElementNS(NS, 'text');
+            mark.setAttribute('x', String(box.x + box.w - 18));
+            mark.setAttribute('y', String(box.y + 20));
+            mark.setAttribute('fill', '#7c2d12');
+            mark.setAttribute('font-size', '14');
+            mark.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+            mark.textContent = box.collapsed ? '+' : '–';
+            group.append(mark);
+          }
+          svg.append(group);
+        }
+
+        summary.textContent = `${model.people.length} ${model.people.length === 1 ? 'person' : 'people'} on ${model.roots.length} ${model.roots.length === 1 ? 'tree' : 'trees'}.`;
+        exportGate.hide();
+        checks.replaceChildren();
+        for (const item of model.checks) {
+          const li = document.createElement('li');
+          li.dataset.ok = item.ok ? 'true' : 'false';
+          li.className = item.ok ? 'text-ink' : 'text-accent';
+          li.textContent = item.text;
+          checks.append(li);
+        }
+        results.hidden = false;
+      };
+
+      const toggle = (id: string) => {
+        if (!model) return;
+        const kids = model.children.get(id) ?? [];
+        if (kids.length === 0) return;
+        if (collapsed.has(id)) collapsed.delete(id);
+        else collapsed.add(id);
+        render();
+        const person = model.people.find((item) => item.id === id);
+        setStatus(collapsed.has(id) ? `Hid the people under ${person?.name ?? 'that person'}.` : `Showed the people under ${person?.name ?? 'that person'}.`);
+      };
+
+      const generate = () => {
+        const next = buildOrg(rows.value, headerBox.checked);
+        if (next.blocked) {
+          setStatus(next.blocked);
+          return;
+        }
+        model = next;
+        collapsed.clear();
+        render();
+        trackChart(tool, 'chart_rendered');
+        const reasons = failedReasons(next.checks);
+        if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'render' });
+        setStatus(`Drew ${next.people.length} ${next.people.length === 1 ? 'person' : 'people'}.`);
+      };
+
+      const syncHeader = () => {
+        if (!headerTouched) headerBox.checked = orgHeaderLikely(rows.value);
+      };
+
+      rows.addEventListener('input', syncHeader);
+      headerBox.addEventListener('change', () => {
+        headerTouched = true;
+      });
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        fileInput.value = '';
+        if (!file) return;
+        if (file.size > 1_500_000) {
+          setStatus('That file is over 1.5 MB. Shorten it and try again. It was not read.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          rows.value = typeof reader.result === 'string' ? reader.result : '';
+          rowInput.markLoaded(rows.value);
+          headerTouched = false;
+          syncHeader();
+          setStatus(`Read ${file.name} into the box on this page. It was not uploaded. Press Generate.`);
+        };
+        reader.onerror = () => setStatus('Could not read that file in this browser.');
+        reader.readAsText(file);
+      });
+
+      svg.addEventListener('click', (event) => {
+        const group = event.target instanceof Element ? event.target.closest('[data-person]') : null;
+        if (group instanceof SVGElement && group.dataset.person) toggle(group.dataset.person);
+      });
+      svg.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const group = event.target instanceof Element ? event.target.closest('[data-person]') : null;
+        if (!(group instanceof SVGElement) || !group.dataset.person) return;
+        event.preventDefault();
+        toggle(group.dataset.person);
+      });
+
+      const finishExport = (format: 'svg' | 'png', confirmed: boolean, message: string) => {
+        trackChart(tool, 'export_done', { format, export_anyway: confirmed });
+        setStatus(message);
+        earlyBird.show();
+      };
+
+      const saveSvg = (confirmed: boolean) => {
+        if (!(svg instanceof SVGSVGElement)) return;
+        const clone = svg.cloneNode(true) as SVGSVGElement;
+        const credit = document.createElementNS(NS, 'text');
+        credit.setAttribute('x', '24');
+        credit.setAttribute('y', String(Number(svg.getAttribute('height')) - 8));
+        credit.setAttribute('fill', '#44403c');
+        credit.setAttribute('font-size', '12');
+        credit.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+        credit.textContent = 'getbabeldoc.com';
+        clone.append(credit);
+        downloadText('org-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
+        finishExport('svg', confirmed, 'Downloaded an SVG of the current chart.');
+      };
+
+      const savePng = (confirmed: boolean) => {
+        if (!(svg instanceof SVGSVGElement)) return;
+        void svgToPngBlob(svg).then((blob) => {
+          if (!blob) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          downloadBlob('org-chart.png', blob);
+          finishExport('png', confirmed, 'Downloaded a PNG of the current chart.');
+        });
+      };
+
+      const exportGate = bindExportConfirm(root, (action, confirmed) => {
+        if (action === 'svg') saveSvg(confirmed);
+        if (action === 'png') savePng(confirmed);
+      });
+
+      root.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest('[data-action]');
+        if (!(button instanceof HTMLButtonElement)) return;
+        if (button.dataset.action === 'generate') {
+          generate();
+          return;
+        }
+        if (button.dataset.action === 'sample') {
+          rows.value = SAMPLE_ORG;
+          rowInput.note(rows.value);
+          trackChart(tool, 'sample_loaded');
+          headerTouched = true;
+          headerBox.checked = true;
+          generate();
+          setStatus('Loaded the sample and drew the chart.');
+          return;
+        }
+        if (!model || !(svg instanceof SVGSVGElement)) return;
+        const action = button.dataset.action;
+        if (action === 'svg' || action === 'png') {
+          trackChart(tool, 'export_click', { format: action });
+          const reasons = failedReasons(model.checks);
+          if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'export' });
+          const issues = blockingMessages(model.checks);
+          if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
+          exportGate.request(action, issues);
+        }
+      });
+    }
+  }
+</script>
