@@ -24,13 +24,13 @@
     // Static pages stay on the asset server. Only the early-bird API runs the Worker.
     "run_worker_first": ["/api/*"]
   },
-  // database_id is filled by `npx wrangler d1 create getbabeldoc-early-access`.
-  // Until that id is committed, a remote deploy cannot attach the database.
+  // database_id is the remote D1 database getbabeldoc-early-access.
+  // Migration 0001_early_access.sql is already applied there.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "getbabeldoc-early-access",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "81f9af98-f546-4de6-94a1-6a2713e1f4cc",
       "migrations_dir": "migrations"
     }
   ],
