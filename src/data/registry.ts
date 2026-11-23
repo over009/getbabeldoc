@@ -17,19 +17,22 @@ import TournamentBracket from '../tools/tournament-bracket-generator.astro';
 
 export const categories = [
   {
-    id: 'text',
-    name: 'Text',
-    description: 'Count words, characters, and model tokens without leaving the browser.',
+    id: 'text-tools',
+    name: 'Text & AI Tools',
+    navLabel: 'Text Tools',
+    description: 'Count words and characters, or estimate tokens for GPT, Claude, and Gemini.',
   },
   {
-    id: 'events',
-    name: 'Events',
-    description: 'Printable sheets and brackets for parties, pools, and fundraisers.',
+    id: 'event-tools',
+    name: 'Events & Games',
+    navLabel: 'Event Tools',
+    description: 'Make a Super Bowl squares grid or a single-elimination tournament bracket.',
   },
   {
-    id: 'time',
-    name: 'Time',
-    description: 'Build chat timestamps from a date and time, without leaving the browser.',
+    id: 'time-tools',
+    name: 'Time & Date Tools',
+    navLabel: 'Time Tools',
+    description: 'Generate a Discord timestamp from a date and time you choose.',
   },
 ] as const;
 
@@ -58,7 +61,10 @@ export interface ToolDefinition {
   ogTitle: string;
   category: CategoryId;
   cardBlurb: string;
+  /** Short label used on related-tool links. */
   buttonLabel: string;
+  /** Homepage card button. An action phrase, different from `name`. */
+  cardCta: string;
   intro: string;
   disclaimer: string;
   howToTitle: string;
@@ -83,9 +89,10 @@ export const tools: ToolDefinition[] = [
     description:
       'Count words, characters, sentences, and paragraphs in your browser. Paste text and see totals update instantly. Nothing is uploaded. Try the free word counter.',
     ogTitle: 'Word Counter — free, instant, in your browser',
-    category: 'text',
+    category: 'text-tools',
     cardBlurb: 'Count words, characters, sentences, and paragraphs as you type.',
     buttonLabel: 'Count words',
+    cardCta: 'Count Words Now →',
     intro:
       'Paste or type text and get a live word count, plus characters, sentences, paragraphs, and an estimated reading time. The count happens in your browser.',
     disclaimer:
@@ -208,9 +215,10 @@ export const tools: ToolDefinition[] = [
     description:
       'Estimate tokens for GPT, Claude, or Gemini. Paste text or upload a file. The count is approximate and stays in this browser.',
     ogTitle: 'Estimate tokens for GPT, Claude, and Gemini',
-    category: 'text',
+    category: 'text-tools',
     cardBlurb: 'Estimate tokens for the GPT, Claude, and Gemini families.',
     buttonLabel: 'Count tokens',
+    cardCta: 'Count Tokens →',
     intro:
       'Paste text, or upload a text or code file, and see an estimated token count for GPT, Claude, or Gemini. The same approximation is used for each family, so the token number does not change when you switch. Characters and words update as you type. The text and the file stay in this browser.',
     disclaimer:
@@ -320,9 +328,10 @@ export const tools: ToolDefinition[] = [
     description:
       'Make a free printable Super Bowl squares template with names, random numbers, and a fundraiser pot. Share a link, or print the sheet and save it as a PDF.',
     ogTitle: 'Printable Super Bowl squares with names, numbers, and a pot',
-    category: 'events',
+    category: 'event-tools',
     cardBlurb: 'Fill a 10 by 10 squares sheet, shuffle the numbers, and print it.',
     buttonLabel: 'Make a sheet',
+    cardCta: 'Create Squares Grid →',
     intro:
       'Set the two side names, type a name into each square, or paste a list and fill the empty squares. Shuffle the digits 0 through 9 when the group is ready to draw. Add a price if you are collecting for a fundraiser. You can share a link, print the sheet, or save it as a PDF. It is an unofficial pool sheet.',
     disclaimer:
@@ -432,9 +441,10 @@ export const tools: ToolDefinition[] = [
     description:
       'Free Discord timestamp generator for every chat style. Pick a date and time, preview how each code reads, and copy it. Nothing leaves this browser.',
     ogTitle: 'Discord timestamp codes for every chat style',
-    category: 'time',
+    category: 'time-tools',
     cardBlurb: 'Build a chat timestamp code for every style and copy it.',
     buttonLabel: 'Make a timestamp',
+    cardCta: 'Generate Timestamp →',
     intro:
       'Pick a date and time and get a Discord timestamp code for every style the chat box accepts. Copy the one you need. The preview uses this device’s clock and language. This page is not affiliated with Discord.',
     disclaimer:
@@ -556,9 +566,10 @@ export const tools: ToolDefinition[] = [
     description:
       'Free tournament bracket generator for a single-elimination draw. Paste 2 to 64 names, click winners, and save a PNG. It stays in your browser.',
     ogTitle: 'Single-elimination bracket you can fill in and save',
-    category: 'events',
+    category: 'event-tools',
     cardBlurb: 'Paste names, click winners, and export a single-elimination bracket.',
     buttonLabel: 'Build a bracket',
+    cardCta: 'Make a Bracket →',
     intro:
       'Paste names, one per line, and build a single-elimination bracket for an office pool, an esports night, or a sports league you run. Click a name to advance it. Share a link, print the page, or save a PNG.',
     disclaimer:

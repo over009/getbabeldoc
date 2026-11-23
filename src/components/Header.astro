@@ -1,14 +1,20 @@
 ---
+import { categories } from '../data/registry';
+
 const pathname = Astro.url.pathname;
 
 const links = [
-  { href: '/', label: 'Home' },
-  { href: '/tools/', label: 'Tools' },
+  ...categories.map((category) => ({
+    href: `/#${category.id}`,
+    label: category.navLabel,
+  })),
+  { href: '/tools/', label: 'All Tools' },
   { href: '/about/', label: 'About' },
   { href: '/contact/', label: 'Contact' },
 ];
 
 function isCurrent(href: string): boolean {
+  if (href.includes('#')) return false;
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(href);
 }
@@ -22,8 +28,8 @@ function isCurrent(href: string): boolean {
     >
       BabelDoc
     </a>
-    <nav aria-label="Primary">
-      <ul class="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+    <nav aria-label="Primary" class="max-sm:w-full">
+      <ul class="flex flex-wrap gap-x-4 gap-y-2 text-sm sm:gap-x-5">
         {
           links.map((link) => (
             <li>

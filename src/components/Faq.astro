@@ -4,13 +4,14 @@ import type { ToolFaq } from '../data/registry';
 interface Props {
   items: ToolFaq[];
   class?: string;
+  heading?: string;
 }
 
-const { items, class: className } = Astro.props;
+const { items, class: className, heading = 'Frequently asked questions' } = Astro.props;
 ---
 
 <section id="faq" class:list={['mt-12', className]}>
-  <h2 class="font-serif text-2xl text-ink">Frequently asked questions</h2>
+  <h2 class="font-serif text-2xl text-ink">{heading}</h2>
   <div class="mt-4 space-y-6">
     {
       items.map((item) => (
