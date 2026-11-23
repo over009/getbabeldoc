@@ -12,7 +12,8 @@ import TournamentBracket from '../tools/tournament-bracket-generator.astro';
  * 2. Add one object to `tools` below. The slug becomes `/tools/<slug>/`.
  *
  * Do not add a new route file. `src/pages/tools/[slug].astro` reads this list.
- * When you link related tools, add the slug on both pages.
+ * `related` is the preferred order. The page still links three other tools: those
+ * slugs first, then the same category, then the rest of the library. Never itself.
  */
 
 export const categories = [
@@ -69,6 +70,7 @@ export interface ToolDefinition {
   disclaimer: string;
   howToTitle: string;
   howTo: string[];
+  features: string[];
   sections: ToolSection[];
   faqs: ToolFaq[];
   related: string[];
@@ -104,6 +106,12 @@ export const tools: ToolDefinition[] = [
       'Use Characters when a limit counts spaces, and No spaces when it does not.',
       'Press Clear text to empty the box and reset every total.',
       'Close the tab when you are done. This page does not save the text.',
+    ],
+    features: [
+      'Words, characters, characters without spaces, sentences, and paragraphs update as you type.',
+      'Reading time is estimated at 200 words per minute.',
+      'Counting runs in your browser. The text is not uploaded and this page does not save it.',
+      'Clear text empties the box and resets every total.',
     ],
     sections: [
       {
@@ -176,32 +184,17 @@ export const tools: ToolDefinition[] = [
           'Characters includes spaces and line breaks. No spaces leaves them out. Pick the one that matches the limit you are writing toward.',
       },
       {
-        question: 'How are sentences detected?',
-        answer:
-          'The counter splits on periods, exclamation marks, and question marks. Text with no punctuation still counts as one sentence if it is not empty. Abbreviations like “Dr.” can be counted as a sentence break.',
-      },
-      {
         question: 'How is reading time calculated?',
         answer:
           'It divides the word count by 200 and rounds up, except that 1 to 200 words is shown as “Under 1 min”. The figure is a reading estimate, not a speaking time.',
-      },
-      {
-        question: 'Is there a length limit?',
-        answer:
-          'The tool does not set one. Practical limits come from your browser and device. If the page becomes sluggish, count the text in smaller chunks.',
       },
       {
         question: 'Will the count match Microsoft Word or Google Docs?',
         answer:
           'Often it is close, and sometimes it is not. Those editors have their own rules for hyphenated words and punctuation. Use this page as a quick local count, then confirm in the editor that will submit the work if an exact number matters.',
       },
-      {
-        question: 'Does it work on a phone?',
-        answer:
-          'Yes. The box and the totals fit a narrow screen. JavaScript has to be enabled for the numbers to update. The explanation and the questions on this page are still there if it is not.',
-      },
     ],
-    related: ['token-counter'],
+    related: ['token-counter', 'discord-timestamp-generator', 'super-bowl-squares-generator'],
     added: '2026-11-19',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to update the counts. The guide on the page is available without JavaScript.',
@@ -230,6 +223,13 @@ export const tools: ToolDefinition[] = [
       'Read the Estimate badge next to Tokens. The number is approximate, not a certified count for every model in that family.',
       'To price a call, type what you pay per 1 million tokens. The page does not keep a price list.',
       'Press Clear text to empty the box. This page does not save what you pasted or the file you opened.',
+    ],
+    features: [
+      'Estimates tokens for the GPT, Claude, and Gemini families with one rule: about 4 characters per token, rounded up.',
+      'Shows characters and words beside the token estimate.',
+      'Reads a text or code file in this browser, up to 5 MB. The file is not uploaded. PDF and Word files are not supported.',
+      'Estimates cost from a price you type per 1 million tokens. This page does not include a vendor price list.',
+      'Labels the token figure as an estimate. It is not a certified count for every model and it is not an API bill.',
     ],
     sections: [
       {
@@ -303,18 +303,8 @@ export const tools: ToolDefinition[] = [
         answer:
           'Do not expect it to. The estimate can miss the vendor’s own split, and an API request can add framing you did not paste, such as role labels. Use the vendor’s usage page when the bill matters.',
       },
-      {
-        question: 'What price should I enter?',
-        answer:
-          'Use the price from your own account, per 1 million tokens. Input and output prices are often different. This page does not ship a vendor price list.',
-      },
-      {
-        question: 'Is a word the same as a token?',
-        answer:
-          'No. The word total splits on whitespace, the same rule as the word counter. This page estimates tokens from characters, so one word can be one estimated token or several. Use the word counter when you only need words, sentences, and a reading time.',
-      },
     ],
-    related: ['word-counter'],
+    related: ['word-counter', 'discord-timestamp-generator', 'tournament-bracket-generator'],
     added: '2026-11-19',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to update the counts and to read a file you choose. The guide on the page is available without JavaScript.',
@@ -345,6 +335,13 @@ export const tools: ToolDefinition[] = [
       'Press Copy share link when you want to send the sheet. The link stores it in the address hash, not on a server. This browser also keeps a copy after you edit.',
       'Press Print / Save as PDF. In the print dialog, choose a printer or Save as PDF. The dialog belongs to your browser.',
     ],
+    features: [
+      'Builds a 10 by 10 squares sheet and lets you rename the two sides.',
+      'Type a name into a square, or paste a list and fill the empty squares in order or at random.',
+      'Shuffles the digits 0 through 9 for each side. Every digit is used once on that side.',
+      'Figures a pot from the price per square and the shares for Q1, half, Q3, and the final score.',
+      'Prints the sheet, saves it as a PDF, or copies a share link. The link stores the sheet in the address hash, not on a server.',
+    ],
     sections: [
       {
         heading: 'How Super Bowl squares work',
@@ -356,8 +353,8 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'How to run a pool',
         paragraphs: [
-          'Agree on the price and the payout split before anyone pays. A common split is even quarters, or a larger share for the final score. Type those numbers and the page multiplies them by the pot. The full-sheet pot is the price times 100. The current pot is the price times the number of squares that already have a name.',
-          'Let people pick squares, or paste the list and assign the empty squares at random. Draw the numbers only when you said you would. Many groups wait until the grid is full so nobody can chase a digit. You can shuffle both sides together, or one side at a time.',
+          'Agree on the price and the payout split before anyone pays. A common split is even quarters, or a larger share for the final score. Type those numbers and the page multiplies them by the pot. The full-sheet pot is the price times 100. The current pot is the price times the number of squares that already have a name. If the four shares do not add up to 100%, the page still multiplies each share by the full-sheet pot and shows the total of the four percentages. An empty box counts as zero. Amounts are rounded to the nearest hundredth.',
+          'Let people pick squares, or paste the list and assign the empty squares at random. The grid has one line per square. Type both names in that line, such as “Sam and Jo”, if they are splitting the cost. Draw the numbers only when you said you would. Many groups wait until the grid is full so nobody can chase a digit. You can shuffle both sides together, or one side at a time.',
           'Share the link so everyone sees the same names and digits. Print a copy for the party. The sheet on this device is saved locally, so a refresh keeps your latest edits unless you opened someone else’s link and have not changed it yet.',
         ],
       },
@@ -416,18 +413,8 @@ export const tools: ToolDefinition[] = [
         answer:
           'No. The link stores the sheet in the URL hash on your device. BabelDoc does not keep a copy. Sending the link shows the recipient the names, the digits, the price, and the payout split. This page also saves your edits in local storage in this browser.',
       },
-      {
-        question: 'What if the quarter shares do not add up to 100%?',
-        answer:
-          'The page still multiplies each share by the full-sheet pot and shows the total of the four percentages. Change the four numbers if you wanted them to use the whole pot. An empty box counts as zero. Amounts are rounded to the nearest hundredth.',
-      },
-      {
-        question: 'Can two people share one square?',
-        answer:
-          'The grid has one line per square. Type both names in that line, such as “Sam and Jo”, if they are splitting the cost. There is no second layer of squares.',
-      },
     ],
-    related: ['tournament-bracket-generator'],
+    related: ['tournament-bracket-generator', 'word-counter', 'discord-timestamp-generator'],
     added: '2026-11-19',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to shuffle numbers, calculate the pot, share a link, and save the sheet on this device. You can still read the guide without JavaScript. Printing uses the browser print dialog.',
@@ -457,6 +444,13 @@ export const tools: ToolDefinition[] = [
       'Read the row for the style you want. The f row is Discord’s default. Each row shows the code and a preview of how a Discord app on this device would render it.',
       'Press Copy on that row and paste the code into Discord. The relative row updates on its own while this page is open.',
       'To check a code you already have, paste it or a Unix time into the decode box and press Decode.',
+    ],
+    features: [
+      'Builds a Discord timestamp code for every chat style: t, T, d, D, f, F, and R.',
+      'Previews each style with this device’s language and timezone.',
+      'Reads the date box in the timezone you pick, and can move that time by an hour, a day, or seven days.',
+      'Decodes a pasted Discord timestamp code or a Unix time.',
+      'Runs in this browser. It does not post to Discord, and it is not affiliated with Discord.',
     ],
     sections: [
       {
@@ -517,11 +511,6 @@ export const tools: ToolDefinition[] = [
           'No. It is an unofficial generator. It does not use the Discord logo, and it does not connect to a Discord account or server.',
       },
       {
-        question: 'Which timestamp style should I use?',
-        answer:
-          'Use f for a normal date and time. That is Discord’s default when a code has no style letter. Use R when you want a relative phrase, t or T for a time of day, and d or D for a date alone. F adds the weekday.',
-      },
-      {
         question: 'Will the preview match Discord exactly?',
         answer:
           'It will be close on this device. The preview uses this browser’s language and timezone. A Discord app in another language can use different punctuation, a 12-hour or 24-hour clock, or a slightly different relative phrase.',
@@ -537,22 +526,12 @@ export const tools: ToolDefinition[] = [
           'Yes. Paste the full code, or the Unix time in seconds, and press Decode. The date box moves to that instant in the selected timezone, and the matching style row is marked.',
       },
       {
-        question: 'What does Next week do?',
-        answer:
-          'It adds 7 days, as 7 times 24 hours, to the time currently in the box. It does not jump to next Monday. +1 day adds exactly 24 hours. Across a daylight-saving change, the clock time in the box can shift by an hour because the timezone offset changed.',
-      },
-      {
         question: 'Is the time I pick uploaded?',
         answer:
           'No. The codes are built in your browser. This page does not save the date and does not send it to BabelDoc.',
       },
-      {
-        question: 'Does it work on a phone?',
-        answer:
-          'Yes. The date control is the one your phone provides, and each code has its own copy button. JavaScript has to be on for the codes to appear. The guide on this page is still there if it is not.',
-      },
     ],
-    related: [],
+    related: ['word-counter', 'token-counter', 'tournament-bracket-generator'],
     added: '2026-11-23',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to build the codes, preview them, and decode a pasted value. The guide on the page is available without JavaScript.',
@@ -582,6 +561,13 @@ export const tools: ToolDefinition[] = [
       'Click a name to mark the winner of that match. Click that winner again to take it back. Changing a result clears winners in later rounds that depended on it. Undo steps back one change.',
       'Press Download PNG for a picture, or Print for a paper copy. In the print dialog, landscape fits a wide bracket better.',
       'Press Copy share link when you want to send the bracket. The link stores it in the address hash, not on a server. This browser also keeps a copy after you build.',
+    ],
+    features: [
+      'Builds a single-elimination bracket for 2 to 64 names.',
+      'Uses list order as the seeds, or shuffles once when random seeding is on.',
+      'Adds byes when the number of names is not 2, 4, 8, 16, 32, or 64. Top seeds face those byes.',
+      'Click a name to advance the winner. Undo steps back one change in this visit.',
+      'Downloads a PNG, prints the page, or copies a share link stored in the address hash.',
     ],
     sections: [
       {
@@ -652,24 +638,9 @@ export const tools: ToolDefinition[] = [
           'With random seeding off, the first line is seed 1, the second is seed 2, and so on. Seed 1 and seed 2 are placed on opposite sides of the bracket. With random seeding on, the list is shuffled once each time you build, and that new order becomes the seeds.',
       },
       {
-        question: 'Can I change a winner?',
-        answer:
-          'Yes. Click the other name to replace the winner, or click the current winner to clear the match. Either way, winners in later rounds that depended on that match are removed. Undo steps back through those changes for this visit.',
-      },
-      {
-        question: 'Does the page save the bracket?',
-        answer:
-          'Yes, in this browser, after you build or edit it. Reset removes that copy. The save is local storage for this site, not an account. A share link is how you move the same bracket to someone else.',
-      },
-      {
         question: 'Does the share link upload the names?',
         answer:
           'No. The link stores the bracket in the URL hash on your device. BabelDoc does not keep a copy. Sending the link shows the recipient the title, the names, and any winners you marked.',
-      },
-      {
-        question: 'Can I save a picture or print it?',
-        answer:
-          'Yes. Download PNG makes a picture in this browser. Print opens the browser print dialog, where you can choose a printer or Save as PDF. Pick landscape for a wide bracket. For 32 or 64 names, the PNG is the easier file to keep.',
       },
       {
         question: 'Is this an official league bracket?',
@@ -677,7 +648,7 @@ export const tools: ToolDefinition[] = [
           'No. It is a generic single-elimination bracket for an office pool, an esports night, or a league you run yourself. It is not affiliated with any league or organizer, and it does not use their names or logos.',
       },
     ],
-    related: ['super-bowl-squares-generator'],
+    related: ['super-bowl-squares-generator', 'token-counter', 'discord-timestamp-generator'],
     added: '2026-11-23',
     layout: 'wide',
     browserRequirements:
@@ -705,9 +676,23 @@ export function toolsByCategory(): { category: (typeof categories)[number]; tool
     .filter((group) => group.tools.length > 0);
 }
 
+const RELATED_LIMIT = 3;
+
 export function getRelated(tool: ToolDefinition): ToolDefinition[] {
-  return tool.related.flatMap((slug) => {
-    const match = toolsBySlug.get(slug);
-    return match ? [match] : [];
-  }).slice(0, 6);
+  const picked: ToolDefinition[] = [];
+  const seen = new Set<string>([tool.slug]);
+
+  const take = (candidate: ToolDefinition | undefined) => {
+    if (!candidate || seen.has(candidate.slug) || picked.length >= RELATED_LIMIT) return;
+    seen.add(candidate.slug);
+    picked.push(candidate);
+  };
+
+  for (const slug of tool.related) take(toolsBySlug.get(slug));
+  for (const candidate of tools) {
+    if (candidate.category === tool.category) take(candidate);
+  }
+  for (const candidate of tools) take(candidate);
+
+  return picked;
 }
