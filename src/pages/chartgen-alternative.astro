@@ -16,6 +16,10 @@ const orgUrl = 'https://getbabeldoc.com/tools/ai-org-chart-generator/';
 const funnelUrl = 'https://getbabeldoc.com/tools/ai-funnel-chart-generator/';
 const notifyUrl = 'https://getbabeldoc.com/chartgen-alternative/#notify';
 
+const fileFaqQuestion = 'Which file should I open in which tool?';
+const fileFaqLd = `If you have a guest list, use the AI Seating Chart Generator (${seatingUrl}). If you have a name, a title, and a manager for each person, use the AI Org Chart Generator (${orgUrl}). If you have a stage column and a value column, use the AI Funnel Chart Generator (${funnelUrl}), or the chart on this page. Bar, line, pie, and heatmap files are not charted here yet. Those are on the roadmap. Leave an email at ${notifyUrl} to get notified. You export a CSV yourself and open that file here. This page does not move a project for you.`;
+const fileFaqHtml = `If you have a guest list, use the <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-seating-chart-generator/">AI Seating Chart Generator</a>. If you have a name, a title, and a manager for each person, use the <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-org-chart-generator/">AI Org Chart Generator</a>. If you have a stage column and a value column, use the <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-funnel-chart-generator/">AI Funnel Chart Generator</a>, or the chart on this page. Bar, line, pie, and heatmap files are not charted here yet. Those are on the roadmap. Leave an email in the <a class="text-accent underline-offset-4 hover:underline" href="#notify" data-open-notify>email box</a> to get notified. You export a CSV yourself and open that file here. This page does not move a project for you.`;
+
 const faqs: ToolFaq[] = [
   {
     question: 'Is my data uploaded?',
@@ -28,8 +32,8 @@ const faqs: ToolFaq[] = [
       'The chart on this page is free to use. You do not create an account, and a download is not behind a payment. A Pro plan is planned at $9 per month. After you export, you can leave an email for the early-bird price. Skipping the form does not block the file.',
   },
   {
-    question: 'How do ChartGen chart types map to these tools?',
-    answer: `A guest list maps to the AI Seating Chart Generator at ${seatingUrl}. A name, title, and manager list maps to the AI Org Chart Generator at ${orgUrl}. A stage column and a value column map to the AI Funnel Chart Generator at ${funnelUrl}, and to the chart on this page. Bar, line, pie, and heatmap charts are not built yet. Those are on the roadmap, and the email box at ${notifyUrl} is how to get notified. You export a CSV yourself and open that file. This page does not move a project for you.`,
+    question: fileFaqQuestion,
+    answer: fileFaqLd,
   },
 ];
 
@@ -38,35 +42,27 @@ const crumbs = [
   { name: 'ChartGen alternative', href: '/chartgen-alternative/' },
 ];
 
-const linkTargets = [seatingUrl, orgUrl, funnelUrl, notifyUrl];
-
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function answerHtml(answer: string): string {
-  let html = escapeHtml(answer);
-  for (const url of linkTargets) {
-    const path = url.replace('https://getbabeldoc.com', '');
-    const anchor = `<a class="text-accent underline-offset-4 hover:underline" href="${path}"${
-      url === notifyUrl ? ' data-open-notify' : ''
-    }>${url}</a>`;
-    html = html.replaceAll(url, anchor);
-  }
-  return html;
-}
+const visibleFaqs = [
+  { question: faqs[0].question, html: escapeHtml(faqs[0].answer) },
+  { question: faqs[1].question, html: escapeHtml(faqs[1].answer) },
+  { question: fileFaqQuestion, html: fileFaqHtml },
+];
 ---
 
 <BaseLayout
   title={title}
   description={description}
-  ogTitle="ChartGen alternative: ChartGen shutting down"
+  ogTitle="ChartGen alternative — ChartGen shutting down"
   jsonLd={[faqLd(faqs), breadcrumbLd(crumbs)]}
 >
   <article>
     <Breadcrumb items={crumbs} />
     <header id="hero" class="max-w-3xl">
-      <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">ChartGen alternative: ChartGen shutting down</h1>
+      <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">A ChartGen alternative after it shuts down on December 14, 2026</h1>
       <p class="mt-4 text-lg leading-8">
         ChartGen is shutting down on December 14, 2026
         (<a class="text-accent underline-offset-4 hover:underline" href={shutdownUrl} rel="noopener noreferrer">source: ChartGen’s own homepage</a>).
@@ -97,7 +93,7 @@ function answerHtml(answer: string): string {
           </svg>
           <h3 class="mt-3 font-serif text-xl text-ink">Export your data from ChartGen as CSV</h3>
           <p class="mt-2 text-sm leading-6">
-            In the account you already use, save the rows as a CSV. This page does not connect to that account and does not download the file for you.
+            ChartGen’s homepage says existing users have 90 days to use remaining credits and export their data. In the account you already use, save the rows as a CSV. This page does not connect to that account and does not export the file for you.
           </p>
         </li>
         <li class="rounded-lg border border-line bg-white p-4">
@@ -114,9 +110,9 @@ function answerHtml(answer: string): string {
             <circle cx="128" cy="24" r="2" fill="#a16207"></circle>
             <text x="142" y="64" text-anchor="middle" fill="#1c1917" font-size="12" font-family="Georgia, serif">Browser</text>
           </svg>
-          <h3 class="mt-3 font-serif text-xl text-ink">Upload the CSV here</h3>
+          <h3 class="mt-3 font-serif text-xl text-ink">Open the CSV here</h3>
           <p class="mt-2 text-sm leading-6">
-            Use Upload a CSV. The browser reads the file into the box on this page. You can paste the same text instead. Either way, it is not uploaded.
+            Press Open a CSV. The browser reads the file into the box on this page. You can paste the same text instead. The file stays in this browser.
           </p>
         </li>
         <li class="rounded-lg border border-line bg-white p-4">
@@ -145,12 +141,16 @@ function answerHtml(answer: string): string {
       <p class="mt-3 max-w-3xl leading-7">
         BabelDoc draws a seating chart, an org chart, and a funnel chart in the browser. The other column is limited to what ChartGen’s public pages described. It is not a claim that the products match, and it is not a joint offer.
       </p>
+      <p class="mt-3 max-w-3xl leading-7">
+        ChartGen’s homepage places the name ClawTeams next to the shutdown notice and says to keep creating with ChartGen capabilities there. This page is an independent alternative, not an official migration path. It is not affiliated with ClawTeams or with ChartGen.
+      </p>
       <p class="mt-4 text-base font-semibold text-ink">Last verified: {verified}.</p>
       <p class="mt-2 max-w-3xl text-sm leading-6 text-muted">
         Checked against ChartGen’s homepage at{' '}
         <a class="text-accent underline-offset-4 hover:underline" href={shutdownUrl} rel="noopener noreferrer">{shutdownUrl}</a>
         {' '}and its public bar, line, and heatmap feature pages on {verified}. Where a capability was not named there, the cell says so.
       </p>
+      <p class="mt-3 text-sm font-semibold text-ink sm:hidden">Swipe to see ChartGen’s column.</p>
       <div class="mt-4 max-w-full overflow-x-auto rounded-lg border border-line">
         <table class="w-full min-w-[44rem] border-collapse text-left text-sm leading-6">
           <caption class="sr-only">BabelDoc chart tools compared with capabilities described on ChartGen’s public pages</caption>
@@ -225,7 +225,7 @@ function answerHtml(answer: string): string {
             <tr class="align-top">
               <th scope="row" class="border-b border-line px-3 py-3 font-semibold">PNG, SVG, and a computed CSV</th>
               <td class="border-b border-line px-3 py-3">Yes. The files are made in this browser. A failed check asks you to confirm before the download.</td>
-              <td class="border-b border-line px-3 py-3">The homepage notice tells existing users to export their data. The file types were not listed on the pages checked.</td>
+              <td class="border-b border-line px-3 py-3">The homepage says a chart can be downloaded there as a PNG, and names SVG and PDF as further options through an Ada.im account. The shutdown notice also tells existing users to export their data.</td>
             </tr>
             <tr class="align-top">
               <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Language model</th>
@@ -246,10 +246,10 @@ function answerHtml(answer: string): string {
       <h2 class="font-serif text-2xl text-ink">Frequently asked questions</h2>
       <div class="mt-4 space-y-6">
         {
-          faqs.map((item) => (
+          visibleFaqs.map((item) => (
             <div>
               <h3 class="font-serif text-lg text-ink">{item.question}</h3>
-              <p class="mt-2 leading-7" set:html={answerHtml(item.answer)} />
+              <p class="mt-2 leading-7" set:html={item.html} />
             </div>
           ))
         }

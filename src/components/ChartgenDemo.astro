@@ -12,7 +12,7 @@ import ExportConfirm from './ExportConfirm.astro';
 
   <div class="mt-4 flex flex-wrap items-center gap-3">
     <label class="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-ink bg-ink px-4 py-2 text-sm font-semibold text-paper hover:bg-accent">
-      Upload a CSV
+      Open a CSV
       <input class="sr-only" type="file" accept=".csv,text/csv,text/plain,.txt" data-field="file" />
     </label>
     <button type="button" data-action="sample" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
@@ -575,6 +575,12 @@ import ExportConfirm from './ExportConfirm.astro';
         window.clearTimeout(resizeTimer);
         resizeTimer = window.setTimeout(() => render(), 150);
       });
+
+      const revealFromHash = () => {
+        if (window.location.hash === '#notify') revealEmail(true);
+      };
+      revealFromHash();
+      window.addEventListener('hashchange', revealFromHash);
 
       syncHeader();
       syncMeasure();
