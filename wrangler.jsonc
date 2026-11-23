@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "getbabeldoc",
+  "main": "src/worker.ts",
   "routes": [{ "pattern": "getbabeldoc.com", "custom_domain": true }],
   "compatibility_date": "2026-11-19",
   "compatibility_flags": ["nodejs_compat"],
@@ -17,9 +18,22 @@
   },
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // Static pages stay on the asset server. Only the early-bird API runs the Worker.
+    "run_worker_first": ["/api/*"]
   },
+  // database_id is filled by `npx wrangler d1 create getbabeldoc-early-access`.
+  // Until that id is committed, a remote deploy cannot attach the database.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "getbabeldoc-early-access",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
   // Wrangler runs this before `deploy` and `preview`. Pull request builds invoke
   // `npx wrangler preview` with no separate build step, so this is what creates dist/.
   "build": {

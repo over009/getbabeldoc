@@ -55,7 +55,27 @@ Build settings, from **Settings → Build**:
 | Deploy command | `npx wrangler deploy` |
 | Production branch | `main` |
 
-`npm run build` must run before the assets are uploaded, because that is what creates `dist/`. `wrangler.jsonc` sets `build.command` to `npm run build`. Both `npx wrangler deploy` and `npx wrangler preview` run that command themselves before they look for `dist/`. Pull request builds only run `npx wrangler preview`, with no separate dashboard build step, so the Wrangler command is what produces the preview. There is no Worker script: this project is assets only.
+`npm run build` must run before the assets are uploaded, because that is what creates `dist/`. `wrangler.jsonc` sets `build.command` to `npm run build`. Both `npx wrangler deploy` and `npx wrangler preview` run that command themselves before they look for `dist/`. Pull request builds only run `npx wrangler preview`, with no separate dashboard build step, so the Wrangler command is what produces the preview.
+
+Pages are still static assets. `src/worker.ts` runs only for `/api/*` (`run_worker_first`). `POST /api/early-access` stores an optional early-bird email in the D1 database `getbabeldoc-early-access` (binding `DB`). The chart files are not part of that request.
+
+The `database_id` in `wrangler.jsonc` is a placeholder until the database exists. Create it and apply the migration before relying on the form in production or in a preview:
+
+```bash
+npx wrangler d1 create getbabeldoc-early-access
+```
+
+Copy the printed `database_id` into `wrangler.jsonc`, replacing `00000000-0000-0000-0000-000000000000`. Then:
+
+```bash
+npx wrangler d1 migrations apply getbabeldoc-early-access --remote
+```
+
+Local check, which does not need the remote id:
+
+```bash
+npx wrangler d1 migrations apply getbabeldoc-early-access --local
+```
 
 `wrangler.jsonc` also sets:
 
@@ -88,6 +108,7 @@ Do not put secrets in `wrangler.jsonc`. This site has none.
 | `/tools/ai-funnel-chart-generator/` | Funnel chart from a CSV or typed stages |
 | `/about/` | About |
 | `/privacy/` | Privacy policy |
+| `/api/early-access` | POST an early-bird email. Not a page. |
 | `/terms/` | Terms of use |
 | `/contact/` | Contact |
 | `/robots.txt` | Allows crawling and points at the sitemap |

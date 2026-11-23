@@ -13,7 +13,7 @@ export function blockingMessages(checks: ExportCheck[]): string[] {
   return checks.filter((check) => check.blocksExport === true && !check.ok).map((check) => check.text);
 }
 
-export function bindExportConfirm(root: ParentNode, run: (action: string) => void): {
+export function bindExportConfirm(root: ParentNode, run: (action: string, confirmed: boolean) => void): {
   request: (action: string, issues: string[]) => void;
   hide: () => void;
 } {
@@ -28,7 +28,7 @@ export function bindExportConfirm(root: ParentNode, run: (action: string) => voi
     !(cancel instanceof HTMLButtonElement)
   ) {
     return {
-      request: (action) => run(action),
+      request: (action) => run(action, false),
       hide: () => undefined,
     };
   }
@@ -44,7 +44,7 @@ export function bindExportConfirm(root: ParentNode, run: (action: string) => voi
   anyway.addEventListener('click', () => {
     const action = pending;
     hide();
-    if (action) run(action);
+    if (action) run(action, true);
   });
   cancel.addEventListener('click', hide);
 
@@ -53,7 +53,7 @@ export function bindExportConfirm(root: ParentNode, run: (action: string) => voi
     request: (action, issues) => {
       if (issues.length === 0) {
         hide();
-        run(action);
+        run(action, false);
         return;
       }
       pending = action;

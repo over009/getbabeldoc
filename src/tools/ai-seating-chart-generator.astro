@@ -1,5 +1,6 @@
 ---
 import ExportConfirm from '../components/ExportConfirm.astro';
+import EarlyBird from '../components/EarlyBird.astro';
 
 // Seating chart. Guest names stay in this browser. Assignment uses fixed rules.
 ---
@@ -117,6 +118,7 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       </button>
     </div>
     <ExportConfirm />
+    <EarlyBird />
   </div>
 
   <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
@@ -211,6 +213,8 @@ import ExportConfirm from '../components/ExportConfirm.astro';
 
 <script>
   import { downloadBlob, downloadText } from '../lib/download';
+  import { failedReasons, trackChart, watchChartInput } from '../lib/analytics';
+  import { bindEarlyBird } from '../lib/early-bird';
   import { bindExportConfirm, blockingMessages } from '../lib/export-confirm';
   import {
     SAMPLE_GUESTS,
@@ -271,6 +275,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       let plan: SeatingPlan | null = null;
       let seatLimit = SAMPLE_SEATS;
       let panelChecks: SeatingCheck[] = [];
+      const tool = 'ai-seating-chart-generator';
+      watchChartInput(tool, guestBox);
+      const earlyBird = bindEarlyBird(root, tool);
 
       const setStatus = (message: string) => {
         status.textContent = message;
@@ -522,6 +529,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         seatLimit = seats;
         plan = assignSeats(guests, pairs, tableCount, seats);
         render();
+        trackChart(tool, 'chart_rendered');
+        const reasons = failedReasons(panelChecks);
+        if (reasons) trackChart(tool, 'check_failed', { reasons });
         const open = tableCount * seats;
         const note = guests.length > open ? ` ${guests.length - open} ${guests.length - open === 1 ? 'guest does' : 'guests do'} not fit.` : '';
         setStatus(`Seated ${guests.length} ${guests.length === 1 ? 'guest' : 'guests'} at ${tableCount} ${tableCount === 1 ? 'table' : 'tables'}.${note}`);
@@ -556,13 +566,19 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       });
       root.addEventListener('dragend', clearDrop);
 
-      const saveCsv = () => {
-        if (!plan) return;
-        downloadText('seating-chart.csv', seatingCsv(guests, plan), 'text/csv;charset=utf-8');
-        setStatus('Downloaded a CSV of the current seats.');
+      const finishExport = (format: 'csv' | 'png', confirmed: boolean, message: string) => {
+        trackChart(tool, 'export_done', { format, export_anyway: confirmed });
+        setStatus(message);
+        earlyBird.show();
       };
 
-      const savePng = () => {
+      const saveCsv = (confirmed: boolean) => {
+        if (!plan) return;
+        downloadText('seating-chart.csv', seatingCsv(guests, plan), 'text/csv;charset=utf-8');
+        finishExport('csv', confirmed, 'Downloaded a CSV of the current seats.');
+      };
+
+      const savePng = (confirmed: boolean) => {
         const canvas = paint();
         if (!canvas) {
           setStatus('Could not create the PNG in this browser.');
@@ -574,13 +590,13 @@ import ExportConfirm from '../components/ExportConfirm.astro';
             return;
           }
           downloadBlob('seating-chart.png', blob);
-          setStatus('Downloaded a PNG of this seating chart.');
+          finishExport('png', confirmed, 'Downloaded a PNG of this seating chart.');
         }, 'image/png');
       };
 
-      const exportGate = bindExportConfirm(root, (action) => {
-        if (action === 'csv') saveCsv();
-        if (action === 'png') savePng();
+      const exportGate = bindExportConfirm(root, (action, confirmed) => {
+        if (action === 'csv') saveCsv(confirmed);
+        if (action === 'png') savePng(confirmed);
       });
 
       root.addEventListener('click', (event) => {
@@ -609,6 +625,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         }
         if (action === 'csv' || action === 'png') {
           if (!plan) return;
+          trackChart(tool, 'export_click', { format: action });
+          const reasons = failedReasons(panelChecks);
+          if (reasons) trackChart(tool, 'check_failed', { reasons });
           const issues = blockingMessages(panelChecks);
           if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
           exportGate.request(action, issues);

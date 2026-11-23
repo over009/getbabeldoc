@@ -34,6 +34,8 @@ export interface FunnelModel {
   reconcile: string[];
   /** Failed reconciliation lines that ask before PNG, SVG, or CSV export. */
   exportBlockers: string[];
+  /** Stable ids for those lines. Never includes a cell value. */
+  failedCheckIds: string[];
 }
 
 export interface FunnelColumn {
@@ -198,9 +200,19 @@ export function buildFunnel(options: {
   reconcile.push(repeats.length === 0 ? 'No stage label is repeated.' : `${repeats.join('. ')}.`);
   reconcile.push(duplicateText);
   const exportBlockers: string[] = [];
-  if (blankStage > 0) exportBlockers.push(blankText);
-  if (options.mode === 'sum' && nonNumeric > 0) exportBlockers.push(numericText);
-  if (exactDuplicates > 0) exportBlockers.push(duplicateText);
+  const failedCheckIds: string[] = [];
+  if (blankStage > 0) {
+    exportBlockers.push(blankText);
+    failedCheckIds.push('blank_stage');
+  }
+  if (options.mode === 'sum' && nonNumeric > 0) {
+    exportBlockers.push(numericText);
+    failedCheckIds.push('non_numeric');
+  }
+  if (exactDuplicates > 0) {
+    exportBlockers.push(duplicateText);
+    failedCheckIds.push('exact_duplicate');
+  }
   if (options.mode === 'sum') {
     const gap = Math.round((numericSum - stageSum) * 1000) / 1000;
     const sameGap = Math.abs(gap - blankStageNumeric) < 0.0005;
@@ -208,12 +220,15 @@ export function buildFunnel(options: {
       ? `Sum of stages: ${formatNumber(stageSum)}. Sum of numeric values in ${valueHeader}: ${formatNumber(numericSum)}.`
       : `Sum of stages: ${formatNumber(stageSum)}. Sum of numeric values in ${valueHeader}: ${formatNumber(numericSum)}. The difference is ${formatNumber(gap)}${sameGap ? ', from numeric values on rows with a blank stage' : ''}.`;
     reconcile.push(gapText);
-    if (gap !== 0) exportBlockers.push(gapText);
+    if (gap !== 0) {
+      exportBlockers.push(gapText);
+      failedCheckIds.push('sum_mismatch');
+    }
   } else {
     reconcile.push(`Rows in the chart: ${formatNumber(stageSum)}. The stage counts add up to ${formatNumber(stageSum)}.`);
   }
 
-  return { ok: true, model: { stages, headers, reconcile, exportBlockers } };
+  return { ok: true, model: { stages, headers, reconcile, exportBlockers, failedCheckIds } };
 }
 
 function buildManual(text: string): FunnelBuild {
@@ -280,8 +295,15 @@ function buildManual(text: string): FunnelBuild {
     'The chart uses the typed values. There is no source file.',
   ];
   const exportBlockers: string[] = [];
-  if (skipped > 0) exportBlockers.push(skippedText);
-  if (exactDuplicates > 0) exportBlockers.push(duplicateText);
+  const failedCheckIds: string[] = [];
+  if (skipped > 0) {
+    exportBlockers.push(skippedText);
+    failedCheckIds.push('skipped_line');
+  }
+  if (exactDuplicates > 0) {
+    exportBlockers.push(duplicateText);
+    failedCheckIds.push('exact_duplicate');
+  }
 
   return {
     ok: true,
@@ -290,6 +312,7 @@ function buildManual(text: string): FunnelBuild {
       headers: ['Stage', 'Value'],
       reconcile,
       exportBlockers,
+      failedCheckIds,
     },
   };
 }

@@ -1,5 +1,6 @@
 ---
 import ExportConfirm from '../components/ExportConfirm.astro';
+import EarlyBird from '../components/EarlyBird.astro';
 
 // Org chart. Rows stay in this browser. The tree is built from the names you enter.
 ---
@@ -63,6 +64,7 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       </button>
     </div>
     <ExportConfirm />
+    <EarlyBird />
   </div>
 
   <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
@@ -105,6 +107,8 @@ import ExportConfirm from '../components/ExportConfirm.astro';
 
 <script>
   import { downloadBlob, downloadText, serializeSvg, svgToPngBlob } from '../lib/download';
+  import { failedReasons, trackChart, watchChartInput } from '../lib/analytics';
+  import { bindEarlyBird } from '../lib/early-bird';
   import { bindExportConfirm, blockingMessages } from '../lib/export-confirm';
   import {
     SAMPLE_ORG,
@@ -140,6 +144,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       let model: OrgModel | null = null;
       const collapsed = new Set<string>();
       let headerTouched = false;
+      const tool = 'ai-org-chart-generator';
+      const rowInput = watchChartInput(tool, rows);
+      const earlyBird = bindEarlyBird(root, tool);
 
       const setStatus = (message: string) => {
         status.textContent = message;
@@ -258,6 +265,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         model = next;
         collapsed.clear();
         render();
+        trackChart(tool, 'chart_rendered');
+        const reasons = failedReasons(next.checks);
+        if (reasons) trackChart(tool, 'check_failed', { reasons });
         setStatus(`Drew ${next.people.length} ${next.people.length === 1 ? 'person' : 'people'}.`);
       };
 
@@ -280,6 +290,7 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         const reader = new FileReader();
         reader.onload = () => {
           rows.value = typeof reader.result === 'string' ? reader.result : '';
+          rowInput.markLoaded(rows.value);
           headerTouched = false;
           syncHeader();
           setStatus(`Read ${file.name} into the box on this page. It was not uploaded. Press Generate.`);
@@ -300,7 +311,13 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         toggle(group.dataset.person);
       });
 
-      const saveSvg = () => {
+      const finishExport = (format: 'svg' | 'png', confirmed: boolean, message: string) => {
+        trackChart(tool, 'export_done', { format, export_anyway: confirmed });
+        setStatus(message);
+        earlyBird.show();
+      };
+
+      const saveSvg = (confirmed: boolean) => {
         if (!(svg instanceof SVGSVGElement)) return;
         const clone = svg.cloneNode(true) as SVGSVGElement;
         const credit = document.createElementNS(NS, 'text');
@@ -312,10 +329,10 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         credit.textContent = 'getbabeldoc.com';
         clone.append(credit);
         downloadText('org-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
-        setStatus('Downloaded an SVG of the current chart.');
+        finishExport('svg', confirmed, 'Downloaded an SVG of the current chart.');
       };
 
-      const savePng = () => {
+      const savePng = (confirmed: boolean) => {
         if (!(svg instanceof SVGSVGElement)) return;
         void svgToPngBlob(svg).then((blob) => {
           if (!blob) {
@@ -323,13 +340,13 @@ import ExportConfirm from '../components/ExportConfirm.astro';
             return;
           }
           downloadBlob('org-chart.png', blob);
-          setStatus('Downloaded a PNG of the current chart.');
+          finishExport('png', confirmed, 'Downloaded a PNG of the current chart.');
         });
       };
 
-      const exportGate = bindExportConfirm(root, (action) => {
-        if (action === 'svg') saveSvg();
-        if (action === 'png') savePng();
+      const exportGate = bindExportConfirm(root, (action, confirmed) => {
+        if (action === 'svg') saveSvg(confirmed);
+        if (action === 'png') savePng(confirmed);
       });
 
       root.addEventListener('click', (event) => {
@@ -352,6 +369,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         if (!model || !(svg instanceof SVGSVGElement)) return;
         const action = button.dataset.action;
         if (action === 'svg' || action === 'png') {
+          trackChart(tool, 'export_click', { format: action });
+          const reasons = failedReasons(model.checks);
+          if (reasons) trackChart(tool, 'check_failed', { reasons });
           const issues = blockingMessages(model.checks);
           if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
           exportGate.request(action, issues);

@@ -30,6 +30,8 @@ export interface OrgPerson {
 
 export interface OrgCheck {
   ok: boolean;
+  /** Stable id for analytics. Never includes a person’s name. */
+  id: string;
   text: string;
   /** When true, a failed check asks before PNG or SVG export. */
   blocksExport?: boolean;
@@ -226,36 +228,39 @@ export function buildOrg(text: string, firstRowHeader: boolean): OrgModel {
 
   const checks: OrgCheck[] = [
     duplicates.length === 0
-      ? { ok: true, text: 'Pass: each person appears once.' }
-      : { ok: false, blocksExport: true, text: `Check: duplicate names were not drawn again: ${joinNames(duplicates)}.` },
+      ? { ok: true, id: 'duplicate', text: 'Pass: each person appears once.' }
+      : { ok: false, id: 'duplicate', blocksExport: true, text: `Check: duplicate names were not drawn again: ${joinNames(duplicates)}.` },
     missing.length === 0
-      ? { ok: true, text: 'Pass: every manager matches a person on the chart.' }
-      : { ok: false, blocksExport: true, text: `Check: these managers are not on the list: ${joinNames(missing)}.` },
+      ? { ok: true, id: 'missing_manager', text: 'Pass: every manager matches a person on the chart.' }
+      : { ok: false, id: 'missing_manager', blocksExport: true, text: `Check: these managers are not on the list: ${joinNames(missing)}.` },
     selfManagers.length === 0
-      ? { ok: true, text: 'Pass: nobody is listed as their own manager.' }
+      ? { ok: true, id: 'self_manager', text: 'Pass: nobody is listed as their own manager.' }
       : {
           ok: false,
+          id: 'self_manager',
           text: selfManagers.length === 1
             ? `Check: ${selfManagers[0]} is listed as their own manager. No link was drawn.`
             : `Check: ${joinNames(selfManagers)} are listed as their own managers. No links were drawn.`,
         },
     roots.length === 1
-      ? { ok: true, text: `Pass: one person is at the top: ${rootNames[0] ?? 'Unknown'}.` }
+      ? { ok: true, id: 'multiple_roots', text: `Pass: one person is at the top: ${rootNames[0] ?? 'Unknown'}.` }
       : {
           ok: false,
+          id: 'multiple_roots',
           blocksExport: true,
           text: `Check: ${roots.length} people are at the top, so the chart shows ${roots.length} trees: ${joinNames(rootNames)}.`,
         },
     cycles.length === 0
-      ? { ok: true, text: 'Pass: there is no reporting loop.' }
-      : { ok: false, blocksExport: true, text: `Check: ${cycles.join(' ')}.` },
+      ? { ok: true, id: 'cycle', text: 'Pass: there is no reporting loop.' }
+      : { ok: false, id: 'cycle', blocksExport: true, text: `Check: ${cycles.join(' ')}.` },
   ];
 
-  if (blank) checks.push({ ok: false, text: 'Check: a row with no name was skipped.' });
-  if (truncated) checks.push({ ok: false, text: `Check: a name longer than ${ORG_LIMITS.name} characters was shortened.` });
+  if (blank) checks.push({ ok: false, id: 'blank_name', text: 'Check: a row with no name was skipped.' });
+  if (truncated) checks.push({ ok: false, id: 'truncated_name', text: `Check: a name longer than ${ORG_LIMITS.name} characters was shortened.` });
   if (usedFallback) {
     checks.push({
       ok: false,
+      id: 'header_fallback',
       text: 'Check: the header did not include Name, Title, and Manager. The first three columns were used in that order.',
     });
   }

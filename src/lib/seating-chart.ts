@@ -51,6 +51,8 @@ export interface SeatingPlan {
 
 export interface SeatingCheck {
   ok: boolean;
+  /** Stable id for analytics. Never includes a guest name. */
+  id: string;
   text: string;
   /** When true, a failed check asks before PNG or CSV export. */
   blocksExport?: boolean;
@@ -355,54 +357,55 @@ export function seatingChecks(
 
   const checks: SeatingCheck[] = [
     once
-      ? { ok: true, text: 'Pass: every guest appears once.' }
-      : { ok: false, text: 'Check: the chart does not list every guest exactly once.' },
+      ? { ok: true, id: 'guest_once', text: 'Pass: every guest appears once.' }
+      : { ok: false, id: 'guest_once', text: 'Check: the chart does not list every guest exactly once.' },
     duplicateNames.length === 0
-      ? { ok: true, text: 'Pass: the guest list has no duplicate names.' }
-      : { ok: false, blocksExport: true, text: `Check: duplicate names were kept once: ${joinNames(duplicateNames)}.` },
+      ? { ok: true, id: 'duplicate', text: 'Pass: the guest list has no duplicate names.' }
+      : { ok: false, id: 'duplicate', blocksExport: true, text: `Check: duplicate names were kept once: ${joinNames(duplicateNames)}.` },
     over.length === 0
-      ? { ok: true, text: `Pass: no table is over its ${seatsPerTable}-seat limit.` }
-      : { ok: false, blocksExport: true, text: `Check: ${over.join('. ')}.` },
+      ? { ok: true, id: 'over_capacity', text: `Pass: no table is over its ${seatsPerTable}-seat limit.` }
+      : { ok: false, id: 'over_capacity', blocksExport: true, text: `Check: ${over.join('. ')}.` },
     unseatedNames.length === 0
-      ? { ok: true, text: 'Pass: every guest has a seat.' }
+      ? { ok: true, id: 'unseated', text: 'Pass: every guest has a seat.' }
       : {
           ok: false,
+          id: 'unseated',
           blocksExport: true,
           text: `Check: ${unseatedNames.length} ${unseatedNames.length === 1 ? 'guest has' : 'guests have'} no seat: ${joinNames(unseatedNames)}.`,
         },
   ];
 
   if (groupTables.size === 0) {
-    checks.push({ ok: true, text: 'Pass: no groups were listed.' });
+    checks.push({ ok: true, id: 'split_group', text: 'Pass: no groups were listed.' });
   } else if (split.length === 0) {
-    checks.push({ ok: true, text: 'Pass: each group sits at one table.' });
+    checks.push({ ok: true, id: 'split_group', text: 'Pass: each group sits at one table.' });
   } else {
     const bits = [`Check: these groups are not all at one table: ${joinNames(split.map((entry) => entry.label))}.`];
     for (const entry of oversized) {
       bits.push(`${entry.label} has ${entry.count} people and each table seats ${seatsPerTable}.`);
     }
-    checks.push({ ok: false, text: bits.join(' ') });
+    checks.push({ ok: false, id: 'split_group', text: bits.join(' ') });
   }
 
   if (!apartWasSet) {
-    checks.push({ ok: true, text: 'Pass: no keep-apart pairs were set.' });
+    checks.push({ ok: true, id: 'keep_apart', text: 'Pass: no keep-apart pairs were set.' });
   } else if (broken.length === 0) {
-    checks.push({ ok: true, text: 'Pass: keep-apart pairs are at different tables.' });
+    checks.push({ ok: true, id: 'keep_apart', text: 'Pass: keep-apart pairs are at different tables.' });
   } else {
-    checks.push({ ok: false, text: `Check: these keep-apart pairs share a table: ${joinNames(broken)}.` });
+    checks.push({ ok: false, id: 'keep_apart', text: `Check: these keep-apart pairs share a table: ${joinNames(broken)}.` });
   }
 
   if (apartWasSet) {
     checks.push(
       unknown.length === 0
-        ? { ok: true, text: 'Pass: every keep-apart name matches a guest.' }
-        : { ok: false, text: `Check: these keep-apart names are not on the guest list: ${joinNames(unknown)}.` },
+        ? { ok: true, id: 'unknown_name', text: 'Pass: every keep-apart name matches a guest.' }
+        : { ok: false, id: 'unknown_name', text: `Check: these keep-apart names are not on the guest list: ${joinNames(unknown)}.` },
     );
   }
 
-  if (blank) checks.push({ ok: false, text: 'Check: a line with no name was skipped.' });
-  if (truncated) checks.push({ ok: false, text: `Check: a name longer than ${SEATING_LIMITS.name} characters was shortened.` });
-  if (extra) checks.push({ ok: false, text: 'Check: a line had more than a name and a group. Extra columns were ignored.' });
+  if (blank) checks.push({ ok: false, id: 'blank_name', text: 'Check: a line with no name was skipped.' });
+  if (truncated) checks.push({ ok: false, id: 'truncated_name', text: `Check: a name longer than ${SEATING_LIMITS.name} characters was shortened.` });
+  if (extra) checks.push({ ok: false, id: 'extra_column', text: 'Check: a line had more than a name and a group. Extra columns were ignored.' });
 
   return checks;
 }

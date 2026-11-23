@@ -1,0 +1,43 @@
+<div data-early-bird class="no-print mt-4 rounded-md border border-line bg-paper p-4" hidden>
+  <div class="flex items-start justify-between gap-3">
+    <p class="text-sm leading-6 text-ink">Pro is coming soon at $9/month. Leave your email for the early-bird price.</p>
+    <button
+      type="button"
+      data-early-dismiss
+      class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-line text-lg leading-none text-ink hover:bg-white"
+      aria-label="Dismiss"
+    >
+      ×
+    </button>
+  </div>
+  <p class="mt-2 text-sm leading-6 text-muted">This sends the email address only. The chart stays in this browser.</p>
+  <form data-early-form class="mt-3 flex flex-wrap items-end gap-2">
+    <label class="block min-w-60 flex-1 text-sm">
+      <span class="font-semibold">Email</span>
+      <input
+        data-early-email
+        class="mt-1 w-full rounded-md border border-line bg-white px-3 py-2 text-ink"
+        type="email"
+        name="email"
+        autocomplete="email"
+        inputmode="email"
+        maxlength="254"
+        required
+      />
+    </label>
+    <button
+      type="submit"
+      class="inline-flex min-h-11 items-center rounded-md border border-ink bg-ink px-4 py-2 text-sm font-semibold text-paper hover:bg-accent"
+    >
+      Submit
+    </button>
+    <button
+      type="button"
+      data-early-later
+      class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper"
+    >
+      Not now
+    </button>
+  </form>
+  <p data-early-message class="mt-2 text-sm leading-6" hidden></p>
+</div>

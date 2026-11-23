@@ -1,5 +1,6 @@
 ---
 import ExportConfirm from '../components/ExportConfirm.astro';
+import EarlyBird from '../components/EarlyBird.astro';
 
 // Funnel chart. A CSV stays in this browser. Stage numbers are sums or counts of those rows.
 ---
@@ -115,6 +116,7 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       </button>
     </div>
     <ExportConfirm />
+    <EarlyBird />
   </div>
 
   <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
@@ -164,6 +166,8 @@ import ExportConfirm from '../components/ExportConfirm.astro';
 <script>
   import { formatNumber } from '../lib/csv';
   import { downloadBlob, downloadText, serializeSvg, svgToPngBlob } from '../lib/download';
+  import { trackChart, watchChartInput } from '../lib/analytics';
+  import { bindEarlyBird } from '../lib/early-bird';
   import { bindExportConfirm } from '../lib/export-confirm';
   import {
     FUNNEL_LIMITS,
@@ -229,6 +233,10 @@ import ExportConfirm from '../components/ExportConfirm.astro';
       let headerTouched = false;
       let mode: 'csv' | 'manual' = 'csv';
       let measure: 'sum' | 'count' = 'sum';
+      const tool = 'ai-funnel-chart-generator';
+      const csvInput = watchChartInput(tool, csvBox);
+      watchChartInput(tool, manualBox);
+      const earlyBird = bindEarlyBird(root, tool);
 
       const setStatus = (message: string) => {
         status.textContent = message;
@@ -471,6 +479,9 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         model = built.model;
         selected = built.model.stages[0]?.label ?? '';
         render();
+        trackChart(tool, 'chart_rendered');
+        const reasons = built.model.failedCheckIds.join(',');
+        if (reasons) trackChart(tool, 'check_failed', { reasons });
         setStatus(`Drew ${built.model.stages.length} ${built.model.stages.length === 1 ? 'stage' : 'stages'}. Select a stage to see its rows.`);
       };
 
@@ -502,6 +513,7 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         const reader = new FileReader();
         reader.onload = () => {
           csvBox.value = typeof reader.result === 'string' ? reader.result : '';
+          csvInput.markLoaded(csvBox.value);
           mode = 'csv';
           const csvMode = root.querySelector('[data-mode="csv"]');
           if (csvMode instanceof HTMLInputElement) csvMode.checked = true;
@@ -578,19 +590,28 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         }
         if (!model) return;
         if (action === 'csv' || action === 'svg' || action === 'png') {
+          trackChart(tool, 'export_click', { format: action });
+          const reasons = model.failedCheckIds.join(',');
+          if (reasons) trackChart(tool, 'check_failed', { reasons });
           const issues = model.exportBlockers;
           if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
           exportGate.request(action, issues);
         }
       });
 
-      const saveCsv = () => {
-        if (!model) return;
-        downloadText('funnel-chart.csv', funnelCsv(model.stages), 'text/csv;charset=utf-8');
-        setStatus('Downloaded a CSV of the computed stages.');
+      const finishExport = (format: 'csv' | 'svg' | 'png', confirmed: boolean, message: string) => {
+        trackChart(tool, 'export_done', { format, export_anyway: confirmed });
+        setStatus(message);
+        earlyBird.show();
       };
 
-      const saveSvg = () => {
+      const saveCsv = (confirmed: boolean) => {
+        if (!model) return;
+        downloadText('funnel-chart.csv', funnelCsv(model.stages), 'text/csv;charset=utf-8');
+        finishExport('csv', confirmed, 'Downloaded a CSV of the computed stages.');
+      };
+
+      const saveSvg = (confirmed: boolean) => {
         const clone = svg.cloneNode(true) as SVGSVGElement;
         const credit = document.createElementNS(NS, 'text');
         credit.setAttribute('x', '16');
@@ -601,24 +622,24 @@ import ExportConfirm from '../components/ExportConfirm.astro';
         credit.textContent = 'getbabeldoc.com';
         clone.append(credit);
         downloadText('funnel-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
-        setStatus('Downloaded an SVG of this funnel.');
+        finishExport('svg', confirmed, 'Downloaded an SVG of this funnel.');
       };
 
-      const savePng = () => {
+      const savePng = (confirmed: boolean) => {
         void svgToPngBlob(svg).then((blob) => {
           if (!blob) {
             setStatus('Could not create the PNG in this browser.');
             return;
           }
           downloadBlob('funnel-chart.png', blob);
-          setStatus('Downloaded a PNG of this funnel.');
+          finishExport('png', confirmed, 'Downloaded a PNG of this funnel.');
         });
       };
 
-      const exportGate = bindExportConfirm(root, (action) => {
-        if (action === 'csv') saveCsv();
-        if (action === 'svg') saveSvg();
-        if (action === 'png') savePng();
+      const exportGate = bindExportConfirm(root, (action, confirmed) => {
+        if (action === 'csv') saveCsv(confirmed);
+        if (action === 'svg') saveSvg(confirmed);
+        if (action === 'png') savePng(confirmed);
       });
 
       syncHeader();
