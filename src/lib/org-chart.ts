@@ -31,6 +31,8 @@ export interface OrgPerson {
 export interface OrgCheck {
   ok: boolean;
   text: string;
+  /** When true, a failed check asks before PNG or SVG export. */
+  blocksExport?: boolean;
 }
 
 export interface OrgModel {
@@ -225,10 +227,10 @@ export function buildOrg(text: string, firstRowHeader: boolean): OrgModel {
   const checks: OrgCheck[] = [
     duplicates.length === 0
       ? { ok: true, text: 'Pass: each person appears once.' }
-      : { ok: false, text: `Check: duplicate names were not drawn again: ${joinNames(duplicates)}.` },
+      : { ok: false, blocksExport: true, text: `Check: duplicate names were not drawn again: ${joinNames(duplicates)}.` },
     missing.length === 0
       ? { ok: true, text: 'Pass: every manager matches a person on the chart.' }
-      : { ok: false, text: `Check: these managers are not on the list: ${joinNames(missing)}.` },
+      : { ok: false, blocksExport: true, text: `Check: these managers are not on the list: ${joinNames(missing)}.` },
     selfManagers.length === 0
       ? { ok: true, text: 'Pass: nobody is listed as their own manager.' }
       : {
@@ -241,11 +243,12 @@ export function buildOrg(text: string, firstRowHeader: boolean): OrgModel {
       ? { ok: true, text: `Pass: one person is at the top: ${rootNames[0] ?? 'Unknown'}.` }
       : {
           ok: false,
+          blocksExport: true,
           text: `Check: ${roots.length} people are at the top, so the chart shows ${roots.length} trees: ${joinNames(rootNames)}.`,
         },
     cycles.length === 0
       ? { ok: true, text: 'Pass: there is no reporting loop.' }
-      : { ok: false, text: `Check: ${cycles.join(' ')}.` },
+      : { ok: false, blocksExport: true, text: `Check: ${cycles.join(' ')}.` },
   ];
 
   if (blank) checks.push({ ok: false, text: 'Check: a row with no name was skipped.' });

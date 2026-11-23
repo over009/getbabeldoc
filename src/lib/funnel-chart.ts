@@ -32,6 +32,8 @@ export interface FunnelModel {
   stages: FunnelStage[];
   headers: string[];
   reconcile: string[];
+  /** Failed reconciliation lines that ask before PNG, SVG, or CSV export. */
+  exportBlockers: string[];
 }
 
 export interface FunnelColumn {
@@ -185,19 +187,20 @@ export function buildFunnel(options: {
   const stageSum = stages.reduce((sum, stage) => sum + stage.value, 0);
   const counts = new Map(stages.map((stage) => [stage.label, stage.rows.length]));
   const repeats = repeatedNotes(counts, options.mode === 'sum' ? 'summed' : 'counted', 'rows');
+  const blankText = `Blank stage: ${blankStage.toLocaleString('en-US')} ${blankStage === 1 ? 'row' : 'rows'} excluded.`;
+  const numericText = `Non-numeric ${valueHeader} values: ${nonNumeric.toLocaleString('en-US')} ${nonNumeric === 1 ? 'row' : 'rows'} excluded.`;
+  const duplicateText = `Exact duplicate rows: ${exactDuplicates.toLocaleString('en-US')}. A repeated row is still included.`;
   const reconcile = [
     `Data rows: ${data.length.toLocaleString('en-US')}.`,
-    `Blank stage: ${blankStage.toLocaleString('en-US')} ${blankStage === 1 ? 'row' : 'rows'} excluded.`,
+    blankText,
   ];
-  if (options.mode === 'sum') {
-    reconcile.push(
-      `Non-numeric ${valueHeader} values: ${nonNumeric.toLocaleString('en-US')} ${nonNumeric === 1 ? 'row' : 'rows'} excluded.`,
-    );
-  }
+  if (options.mode === 'sum') reconcile.push(numericText);
   reconcile.push(repeats.length === 0 ? 'No stage label is repeated.' : `${repeats.join('. ')}.`);
-  reconcile.push(
-    `Exact duplicate rows: ${exactDuplicates.toLocaleString('en-US')}. A repeated row is still included.`,
-  );
+  reconcile.push(duplicateText);
+  const exportBlockers: string[] = [];
+  if (blankStage > 0) exportBlockers.push(blankText);
+  if (options.mode === 'sum' && nonNumeric > 0) exportBlockers.push(numericText);
+  if (exactDuplicates > 0) exportBlockers.push(duplicateText);
   if (options.mode === 'sum') {
     const gap = Math.round((numericSum - stageSum) * 1000) / 1000;
     const sameGap = Math.abs(gap - blankStageNumeric) < 0.0005;
@@ -205,11 +208,12 @@ export function buildFunnel(options: {
       ? `Sum of stages: ${formatNumber(stageSum)}. Sum of numeric values in ${valueHeader}: ${formatNumber(numericSum)}.`
       : `Sum of stages: ${formatNumber(stageSum)}. Sum of numeric values in ${valueHeader}: ${formatNumber(numericSum)}. The difference is ${formatNumber(gap)}${sameGap ? ', from numeric values on rows with a blank stage' : ''}.`;
     reconcile.push(gapText);
+    if (gap !== 0) exportBlockers.push(gapText);
   } else {
     reconcile.push(`Rows in the chart: ${formatNumber(stageSum)}. The stage counts add up to ${formatNumber(stageSum)}.`);
   }
 
-  return { ok: true, model: { stages, headers, reconcile } };
+  return { ok: true, model: { stages, headers, reconcile, exportBlockers } };
 }
 
 function buildManual(text: string): FunnelBuild {
@@ -218,6 +222,8 @@ function buildManual(text: string): FunnelBuild {
   const grouped = new Map<string, { rows: string[][]; values: number[] }>();
   let skipped = 0;
   let lines = 0;
+  let exactDuplicates = 0;
+  const lineKeys = new Map<string, number>();
 
   for (const row of rows) {
     if (row.every((cell) => cell.trim() === '')) continue;
@@ -228,6 +234,10 @@ function buildManual(text: string): FunnelBuild {
       skipped += 1;
       continue;
     }
+    const lineKey = `${label}\u0000${numeric}`;
+    const seen = lineKeys.get(lineKey) ?? 0;
+    if (seen > 0) exactDuplicates += 1;
+    lineKeys.set(lineKey, seen + 1);
     let bucket = grouped.get(label);
     if (!bucket) {
       bucket = { rows: [], values: [] };
@@ -260,12 +270,18 @@ function buildManual(text: string): FunnelBuild {
 
   const counts = new Map(stages.map((stage) => [stage.label, stage.rows.length]));
   const repeats = repeatedNotes(counts, 'added', 'lines');
+  const skippedText = `Lines skipped because the stage or the value was missing or not a number: ${skipped.toLocaleString('en-US')}.`;
+  const duplicateText = `Exact duplicate lines: ${exactDuplicates.toLocaleString('en-US')}. A repeated line is still included.`;
   const reconcile = [
     `Lines read: ${lines.toLocaleString('en-US')}.`,
-    `Lines skipped because the stage or the value was missing or not a number: ${skipped.toLocaleString('en-US')}.`,
+    skippedText,
     repeats.length === 0 ? 'No stage was typed twice.' : `${repeats.join('. ')}.`,
+    duplicateText,
     'The chart uses the typed values. There is no source file.',
   ];
+  const exportBlockers: string[] = [];
+  if (skipped > 0) exportBlockers.push(skippedText);
+  if (exactDuplicates > 0) exportBlockers.push(duplicateText);
 
   return {
     ok: true,
@@ -273,6 +289,7 @@ function buildManual(text: string): FunnelBuild {
       stages,
       headers: ['Stage', 'Value'],
       reconcile,
+      exportBlockers,
     },
   };
 }

@@ -1,10 +1,12 @@
 ---
+import ExportConfirm from '../components/ExportConfirm.astro';
+
 // Org chart. Rows stay in this browser. The tree is built from the names you enter.
 ---
 
 <div data-org class="rounded-lg border border-line bg-white p-4 sm:p-5">
   <p class="text-sm leading-6 text-muted">
-    Paste names, titles, and managers, or open a CSV. The file is read into the box on this page and is not uploaded. The drawing uses those rows, not a language model.
+    Every box can be traced to a row in this list, and the chart is computed in this browser. A file you open is copied into the box and is not uploaded.
   </p>
 
   <div class="no-print mt-4">
@@ -45,12 +47,12 @@
   <div data-results class="mt-6" hidden>
     <p data-summary class="text-sm leading-6 text-muted"></p>
     <p class="no-print mt-2 text-sm leading-6 text-muted">Click a person to hide or show the people who report to them.</p>
-    <div data-scroll class="mt-3 max-w-full overflow-auto rounded-md border border-line bg-white">
-      <svg data-chart xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Org chart"></svg>
-    </div>
-    <div class="mt-6" role="region" aria-labelledby="org-checks-title">
+    <div class="mt-4" role="region" aria-labelledby="org-checks-title">
       <p id="org-checks-title" class="font-serif text-xl text-ink">Check panel</p>
       <ul data-checks class="mt-3 space-y-2 text-sm leading-6"></ul>
+    </div>
+    <div data-scroll class="mt-3 max-w-full overflow-auto rounded-md border border-line bg-white">
+      <svg data-chart xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Org chart"></svg>
     </div>
     <div class="no-print mt-4 flex flex-wrap gap-2">
       <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
@@ -60,6 +62,7 @@
         Download SVG
       </button>
     </div>
+    <ExportConfirm />
   </div>
 
   <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
@@ -102,6 +105,7 @@
 
 <script>
   import { downloadBlob, downloadText, serializeSvg, svgToPngBlob } from '../lib/download';
+  import { bindExportConfirm, blockingMessages } from '../lib/export-confirm';
   import {
     SAMPLE_ORG,
     buildOrg,
@@ -222,6 +226,7 @@
         }
 
         summary.textContent = `${model.people.length} ${model.people.length === 1 ? 'person' : 'people'} on ${model.roots.length} ${model.roots.length === 1 ? 'tree' : 'trees'}.`;
+        exportGate.hide();
         checks.replaceChildren();
         for (const item of model.checks) {
           const li = document.createElement('li');
@@ -295,6 +300,38 @@
         toggle(group.dataset.person);
       });
 
+      const saveSvg = () => {
+        if (!(svg instanceof SVGSVGElement)) return;
+        const clone = svg.cloneNode(true) as SVGSVGElement;
+        const credit = document.createElementNS(NS, 'text');
+        credit.setAttribute('x', '24');
+        credit.setAttribute('y', String(Number(svg.getAttribute('height')) - 8));
+        credit.setAttribute('fill', '#44403c');
+        credit.setAttribute('font-size', '12');
+        credit.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+        credit.textContent = 'getbabeldoc.com';
+        clone.append(credit);
+        downloadText('org-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
+        setStatus('Downloaded an SVG of the current chart.');
+      };
+
+      const savePng = () => {
+        if (!(svg instanceof SVGSVGElement)) return;
+        void svgToPngBlob(svg).then((blob) => {
+          if (!blob) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          downloadBlob('org-chart.png', blob);
+          setStatus('Downloaded a PNG of the current chart.');
+        });
+      };
+
+      const exportGate = bindExportConfirm(root, (action) => {
+        if (action === 'svg') saveSvg();
+        if (action === 'png') savePng();
+      });
+
       root.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -313,29 +350,11 @@
           return;
         }
         if (!model || !(svg instanceof SVGSVGElement)) return;
-        if (button.dataset.action === 'svg') {
-          const clone = svg.cloneNode(true) as SVGSVGElement;
-          const credit = document.createElementNS(NS, 'text');
-          credit.setAttribute('x', '24');
-          credit.setAttribute('y', String(Number(svg.getAttribute('height')) - 8));
-          credit.setAttribute('fill', '#44403c');
-          credit.setAttribute('font-size', '12');
-          credit.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
-          credit.textContent = 'getbabeldoc.com';
-          clone.append(credit);
-          downloadText('org-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
-          setStatus('Downloaded an SVG of the current chart.');
-          return;
-        }
-        if (button.dataset.action === 'png') {
-          void svgToPngBlob(svg).then((blob) => {
-            if (!blob) {
-              setStatus('Could not create the PNG in this browser.');
-              return;
-            }
-            downloadBlob('org-chart.png', blob);
-            setStatus('Downloaded a PNG of the current chart.');
-          });
+        const action = button.dataset.action;
+        if (action === 'svg' || action === 'png') {
+          const issues = blockingMessages(model.checks);
+          if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
+          exportGate.request(action, issues);
         }
       });
     }

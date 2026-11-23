@@ -1,10 +1,12 @@
 ---
-// Seating chart. Guest names stay in this browser. Assignment uses fixed rules, not a model.
+import ExportConfirm from '../components/ExportConfirm.astro';
+
+// Seating chart. Guest names stay in this browser. Assignment uses fixed rules.
 ---
 
 <div data-seating class="rounded-lg border border-line bg-white p-4 sm:p-5">
   <p class="text-sm leading-6 text-muted">
-    Paste a guest list and generate a chart. Assignment uses fixed rules on this page. The same list always gives the same seats. Names are not uploaded.
+    Every assignment can be traced to a line in this list, and the seats are computed in this browser. The same list always gives the same seats.
   </p>
 
   <div class="no-print mt-4">
@@ -75,6 +77,10 @@
 
   <div data-results class="mt-6" hidden>
     <p data-summary class="text-sm leading-6 text-muted"></p>
+    <div class="mt-4" role="region" aria-labelledby="seating-checks-title">
+      <p id="seating-checks-title" class="font-serif text-xl text-ink">Check panel</p>
+      <ul data-checks class="mt-3 space-y-2 text-sm leading-6"></ul>
+    </div>
     <div data-board class="mt-4 grid gap-8 sm:grid-cols-2"></div>
     <div
       data-unseated
@@ -99,11 +105,6 @@
       </button>
     </div>
 
-    <div class="mt-6" role="region" aria-labelledby="seating-checks-title">
-      <p id="seating-checks-title" class="font-serif text-xl text-ink">Check panel</p>
-      <ul data-checks class="mt-3 space-y-2 text-sm leading-6"></ul>
-    </div>
-
     <div class="no-print mt-4 flex flex-wrap gap-2">
       <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
         Download PNG
@@ -115,6 +116,7 @@
         Print
       </button>
     </div>
+    <ExportConfirm />
   </div>
 
   <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
@@ -209,6 +211,7 @@
 
 <script>
   import { downloadBlob, downloadText } from '../lib/download';
+  import { bindExportConfirm, blockingMessages } from '../lib/export-confirm';
   import {
     SAMPLE_GUESTS,
     SAMPLE_SEATS,
@@ -267,6 +270,7 @@
       let apartWasSet = false;
       let plan: SeatingPlan | null = null;
       let seatLimit = SAMPLE_SEATS;
+      let panelChecks: SeatingCheck[] = [];
 
       const setStatus = (message: string) => {
         status.textContent = message;
@@ -368,9 +372,10 @@
         }
         unseatedEmpty.hidden = plan.unseated.length > 0;
 
-        const panel = seatingChecks(guests, plan, seatLimit, issues, pairs, unknown, apartWasSet);
+        panelChecks = seatingChecks(guests, plan, seatLimit, issues, pairs, unknown, apartWasSet);
+        exportGate.hide();
         checks.replaceChildren();
-        for (const item of panel) checks.append(checkItem(item));
+        for (const item of panelChecks) checks.append(checkItem(item));
 
         fillSelect(
           moveGuestSelect,
@@ -551,6 +556,33 @@
       });
       root.addEventListener('dragend', clearDrop);
 
+      const saveCsv = () => {
+        if (!plan) return;
+        downloadText('seating-chart.csv', seatingCsv(guests, plan), 'text/csv;charset=utf-8');
+        setStatus('Downloaded a CSV of the current seats.');
+      };
+
+      const savePng = () => {
+        const canvas = paint();
+        if (!canvas) {
+          setStatus('Could not create the PNG in this browser.');
+          return;
+        }
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          downloadBlob('seating-chart.png', blob);
+          setStatus('Downloaded a PNG of this seating chart.');
+        }, 'image/png');
+      };
+
+      const exportGate = bindExportConfirm(root, (action) => {
+        if (action === 'csv') saveCsv();
+        if (action === 'png') savePng();
+      });
+
       root.addEventListener('click', (event) => {
         const target = event.target;
         if (!(target instanceof Element)) return;
@@ -575,26 +607,11 @@
           applyMove(moveGuestSelect.value, moveTargetSelect.value);
           return;
         }
-        if (action === 'csv') {
+        if (action === 'csv' || action === 'png') {
           if (!plan) return;
-          downloadText('seating-chart.csv', seatingCsv(guests, plan), 'text/csv;charset=utf-8');
-          setStatus('Downloaded a CSV of the current seats.');
-          return;
-        }
-        if (action === 'png') {
-          const canvas = paint();
-          if (!canvas) {
-            setStatus('Could not create the PNG in this browser.');
-            return;
-          }
-          canvas.toBlob((blob) => {
-            if (!blob) {
-              setStatus('Could not create the PNG in this browser.');
-              return;
-            }
-            downloadBlob('seating-chart.png', blob);
-            setStatus('Downloaded a PNG of this seating chart.');
-          }, 'image/png');
+          const issues = blockingMessages(panelChecks);
+          if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
+          exportGate.request(action, issues);
           return;
         }
         if (action === 'print') {

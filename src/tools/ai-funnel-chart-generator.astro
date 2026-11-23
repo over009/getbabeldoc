@@ -1,10 +1,12 @@
 ---
+import ExportConfirm from '../components/ExportConfirm.astro';
+
 // Funnel chart. A CSV stays in this browser. Stage numbers are sums or counts of those rows.
 ---
 
 <div data-funnel class="rounded-lg border border-line bg-white p-4 sm:p-5">
   <p class="text-sm leading-6 text-muted">
-    Paste a CSV, open a file, or type stages yourself. A file is read in this browser and is not uploaded. This page does not connect to Tableau or to any other app.
+    Every stage number can be traced to the rows behind it, and the math is computed in this browser. A file you open stays here and is not uploaded.
   </p>
 
   <fieldset class="no-print mt-4">
@@ -81,21 +83,25 @@
 
   <div data-results class="mt-6" hidden>
     <p data-summary class="text-sm leading-6 text-muted"></p>
-    <div data-scroll class="mt-3 max-w-full overflow-auto rounded-md border border-line bg-white">
-      <svg data-chart xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Funnel chart"></svg>
-    </div>
-    <div data-order class="no-print mt-4 flex flex-wrap gap-2"></div>
-    <div class="mt-6 rounded-md border border-line bg-paper p-4" role="region" aria-labelledby="funnel-detail-title">
-      <p id="funnel-detail-title" class="font-serif text-xl text-ink" data-detail-title>Stage</p>
-      <p data-detail-calc class="mt-2 leading-7"></p>
-      <p data-detail-equation class="mt-2 font-mono text-sm leading-6" hidden></p>
-      <p data-detail-percent class="mt-2 text-sm leading-6 text-muted"></p>
-      <p data-detail-note class="mt-2 text-sm leading-6 text-muted" hidden></p>
-      <div data-detail-table class="mt-3 max-h-64 overflow-auto"></div>
-    </div>
-    <div class="mt-6" role="region" aria-labelledby="funnel-reconcile-title">
-      <p id="funnel-reconcile-title" class="font-serif text-xl text-ink">Reconciliation</p>
-      <ul data-reconcile class="mt-3 space-y-2 text-sm leading-6"></ul>
+    <div class="mt-3 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div class="rounded-md border border-line bg-paper p-4 lg:col-start-2 lg:row-start-1" role="region" aria-labelledby="funnel-reconcile-title">
+        <p id="funnel-reconcile-title" class="font-serif text-xl text-ink">Reconciliation</p>
+        <ul data-reconcile class="mt-3 space-y-2 text-sm leading-6"></ul>
+      </div>
+      <div class="lg:col-start-1 lg:row-start-1">
+        <div data-scroll class="max-w-full overflow-auto rounded-md border border-line bg-white">
+          <svg data-chart xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Funnel chart"></svg>
+        </div>
+        <div data-order class="no-print mt-4 flex flex-wrap gap-2"></div>
+        <div class="mt-4 rounded-md border border-line bg-paper p-4" role="region" aria-labelledby="funnel-detail-title">
+          <p id="funnel-detail-title" class="font-serif text-xl text-ink" data-detail-title>Stage</p>
+          <p data-detail-calc class="mt-2 leading-7"></p>
+          <p data-detail-equation class="mt-2 font-mono text-sm leading-6" hidden></p>
+          <p data-detail-percent class="mt-2 text-sm leading-6 text-muted"></p>
+          <p data-detail-note class="mt-2 text-sm leading-6 text-muted" hidden></p>
+          <div data-detail-table class="mt-3 max-h-64 overflow-auto"></div>
+        </div>
+      </div>
     </div>
     <div class="no-print mt-4 flex flex-wrap gap-2">
       <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
@@ -108,6 +114,7 @@
         Download CSV
       </button>
     </div>
+    <ExportConfirm />
   </div>
 
   <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
@@ -148,11 +155,16 @@
       background: #fff !important;
     }
   }
+
+  :global([data-funnel] [data-band]:focus) {
+    outline: none;
+  }
 </style>
 
 <script>
   import { formatNumber } from '../lib/csv';
   import { downloadBlob, downloadText, serializeSvg, svgToPngBlob } from '../lib/download';
+  import { bindExportConfirm } from '../lib/export-confirm';
   import {
     FUNNEL_LIMITS,
     SAMPLE_FUNNEL,
@@ -294,22 +306,22 @@
         }
         table.append(head, body);
         detailTable.replaceChildren(table);
-        svg.querySelectorAll('[data-stage]').forEach((node) => {
+        svg.querySelectorAll('[data-band]').forEach((node) => {
           if (!(node instanceof SVGElement)) return;
           const on = node.dataset.stage === stage.label;
           node.setAttribute('aria-pressed', on ? 'true' : 'false');
-          node.querySelector('polygon')?.setAttribute('stroke-width', on ? '4' : '0');
+          node.querySelector('[data-highlight]')?.setAttribute('display', on ? 'inline' : 'none');
         });
       };
 
       const render = () => {
         if (!model) return;
         const stages = model.stages;
-        const funnelWidth = 460;
+        const funnelWidth = 250;
         const rowHeight = 76;
         const gap = 8;
-        const labelX = funnelWidth + 48;
-        const width = labelX + 300;
+        const labelX = funnelWidth + 56;
+        const width = labelX + 236;
         const height = Math.max(120, stages.length * (rowHeight + gap) + 24);
         const max = Math.max(...stages.map((stage) => Math.max(stage.value, 0)), 0);
         const barWidth = (value: number) => {
@@ -338,20 +350,32 @@
             [center + bottomWidth / 2, y + rowHeight],
             [center - bottomWidth / 2, y + rowHeight],
           ].map((pair) => pair.join(',')).join(' ');
+          const left = Math.min(center - topWidth / 2, center - bottomWidth / 2);
+          const right = Math.max(center + topWidth / 2, center + bottomWidth / 2);
           const group = document.createElementNS(NS, 'g');
           group.dataset.stage = stage.label;
+          group.dataset.band = 'true';
           group.setAttribute('tabindex', '0');
           group.setAttribute('role', 'button');
           group.setAttribute('aria-pressed', stage.label === selected ? 'true' : 'false');
           group.setAttribute('aria-label', `${stage.label}, ${formatNumber(stage.value)}. Show how this number was computed.`);
+          const highlight = document.createElementNS(NS, 'rect');
+          highlight.dataset.highlight = 'true';
+          highlight.setAttribute('x', String(left - 6));
+          highlight.setAttribute('y', String(y - 6));
+          highlight.setAttribute('width', String(right - left + 12));
+          highlight.setAttribute('height', String(rowHeight + 12));
+          highlight.setAttribute('rx', '4');
+          highlight.setAttribute('fill', 'none');
+          highlight.setAttribute('stroke', '#1c1917');
+          highlight.setAttribute('stroke-width', '2');
+          highlight.setAttribute('display', stage.label === selected ? 'inline' : 'none');
           const shape = document.createElementNS(NS, 'polygon');
           shape.setAttribute('points', points);
           shape.setAttribute('fill', FILLS[index % FILLS.length] ?? '#7c2d12');
-          shape.setAttribute('stroke', '#1c1917');
-          shape.setAttribute('stroke-width', stage.label === selected ? '4' : '0');
           const title = document.createElementNS(NS, 'title');
           title.textContent = stage.computation;
-          group.append(title, shape);
+          group.append(title, highlight, shape);
           if (topWidth > 110) {
             const inside = document.createElementNS(NS, 'text');
             inside.setAttribute('x', String(center));
@@ -363,6 +387,8 @@
             inside.textContent = formatNumber(stage.value);
             group.append(inside);
           }
+          const labels = document.createElementNS(NS, 'g');
+          labels.dataset.stage = stage.label;
           const percents = stagePercents(stages, index);
           const name = document.createElementNS(NS, 'text');
           name.setAttribute('x', String(labelX));
@@ -386,8 +412,8 @@
           rates.setAttribute('font-size', '12');
           rates.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
           rates.textContent = `${percents.previous} of previous · ${percents.top} of top`;
-          group.append(name, value, rates);
-          svg.append(group);
+          labels.append(name, value, rates);
+          svg.append(group, labels);
         });
 
         orderBox.replaceChildren();
@@ -415,6 +441,7 @@
           orderBox.append(wrap);
         });
 
+        exportGate.hide();
         reconcile.replaceChildren();
         for (const line of model.reconcile) {
           const item = document.createElement('li');
@@ -550,35 +577,48 @@
           return;
         }
         if (!model) return;
-        if (action === 'csv') {
-          downloadText('funnel-chart.csv', funnelCsv(model.stages), 'text/csv;charset=utf-8');
-          setStatus('Downloaded a CSV of the computed stages.');
-          return;
+        if (action === 'csv' || action === 'svg' || action === 'png') {
+          const issues = model.exportBlockers;
+          if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
+          exportGate.request(action, issues);
         }
-        if (action === 'svg') {
-          const clone = svg.cloneNode(true) as SVGSVGElement;
-          const credit = document.createElementNS(NS, 'text');
-          credit.setAttribute('x', '16');
-          credit.setAttribute('y', String(Number(svg.getAttribute('height')) - 6));
-          credit.setAttribute('fill', '#44403c');
-          credit.setAttribute('font-size', '12');
-          credit.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
-          credit.textContent = 'getbabeldoc.com';
-          clone.append(credit);
-          downloadText('funnel-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
-          setStatus('Downloaded an SVG of this funnel.');
-          return;
-        }
-        if (action === 'png') {
-          void svgToPngBlob(svg).then((blob) => {
-            if (!blob) {
-              setStatus('Could not create the PNG in this browser.');
-              return;
-            }
-            downloadBlob('funnel-chart.png', blob);
-            setStatus('Downloaded a PNG of this funnel.');
-          });
-        }
+      });
+
+      const saveCsv = () => {
+        if (!model) return;
+        downloadText('funnel-chart.csv', funnelCsv(model.stages), 'text/csv;charset=utf-8');
+        setStatus('Downloaded a CSV of the computed stages.');
+      };
+
+      const saveSvg = () => {
+        const clone = svg.cloneNode(true) as SVGSVGElement;
+        const credit = document.createElementNS(NS, 'text');
+        credit.setAttribute('x', '16');
+        credit.setAttribute('y', String(Number(svg.getAttribute('height')) - 6));
+        credit.setAttribute('fill', '#44403c');
+        credit.setAttribute('font-size', '12');
+        credit.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+        credit.textContent = 'getbabeldoc.com';
+        clone.append(credit);
+        downloadText('funnel-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
+        setStatus('Downloaded an SVG of this funnel.');
+      };
+
+      const savePng = () => {
+        void svgToPngBlob(svg).then((blob) => {
+          if (!blob) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          downloadBlob('funnel-chart.png', blob);
+          setStatus('Downloaded a PNG of this funnel.');
+        });
+      };
+
+      const exportGate = bindExportConfirm(root, (action) => {
+        if (action === 'csv') saveCsv();
+        if (action === 'svg') saveSvg();
+        if (action === 'png') savePng();
       });
 
       syncHeader();

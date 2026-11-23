@@ -36,7 +36,7 @@ export const categories = [
     id: 'chart-tools',
     name: 'Charts & Diagrams',
     navLabel: 'Chart Tools',
-    description: 'Draw an org chart or a funnel chart from a list or a CSV, in this browser.',
+    description: 'Draw a seating chart, an org chart, or a funnel chart from a list or a CSV, in this browser.',
   },
   {
     id: 'time-tools',
@@ -70,6 +70,8 @@ export interface ToolDefinition {
   description: string;
   ogTitle: string;
   category: CategoryId;
+  /** Extra directory sections. The tool’s own category is unchanged. */
+  alsoOn?: CategoryId[];
   cardBlurb: string;
   /** Short label used on related-tool links. */
   buttonLabel: string;
@@ -446,13 +448,14 @@ export const tools: ToolDefinition[] = [
       'Paste a guest list, set tables and seats, and generate a seating chart in your browser. Groups stay together. Export a PNG or CSV. Nothing is uploaded.',
     ogTitle: 'Seating chart from a guest list, in your browser',
     category: 'event-tools',
+    alsoOn: ['chart-tools'],
     cardBlurb: 'Assign guests to round tables, keep groups together, and export the chart.',
     buttonLabel: 'Build a seating chart',
     cardCta: 'Build a Seating Chart →',
     intro:
-      'Paste a guest list, set how many tables you have, and generate a seating chart. People in the same group sit together when the table can hold them. You can drag someone to another table afterward. The assignment uses fixed rules in this browser. It does not call a language model.',
+      'Every assignment can be traced back to a line in the guest list, and the chart is computed in this browser. Paste the list, set how many tables you have, and generate the seats. People in the same group sit together when the table can hold them. You can drag someone to another table afterward.',
     disclaimer:
-      'The chart follows the rules below. It is a planning aid, not a reservation system. Guest names stay in this browser and are not saved.',
+      'The seats follow the guest list and the rules below. This page does not call a language model. It is a planning aid, not a reservation system. Guest names stay in this browser and are not saved.',
     howToTitle: 'How to use this seating chart generator',
     howTo: [
       'Paste one guest per line. To keep people together, add a comma and a group, as in “Avery Chen, Speakers”.',
@@ -460,14 +463,14 @@ export const tools: ToolDefinition[] = [
       'Optional: list keep-apart pairs, one pair per line, as in “Avery Chen, Jules Moreau”.',
       'Press Generate. The same list, tables, seats, and pairs always produce the same chart. Load sample fills an example and generates it.',
       'Drag a name onto another table, or onto Unseated. You can also pick a guest and a destination, then press Move.',
-      'Read the check panel under the tables. Then press Download PNG, Download CSV, or Print.',
+      'Read the check panel above the tables. Then press Download PNG, Download CSV, or Print. If duplicate names, an over-full table, or an unseated guest is marked, the download asks you to confirm first.',
     ],
     features: [
       'Assigns seats automatically so a group shares a table when that group fits and a keep-apart pair does not force a split.',
       'Draws one round table per table, with each guest’s name around it.',
       'Drag a guest to another table, or use Move a guest when dragging is awkward.',
       'Check panel confirms each guest appears once and flags duplicate names, over-full tables, and guests with no seat.',
-      'Download a PNG or a CSV of the current seats, or print the page. Nothing is uploaded.',
+      'Download a PNG or a CSV of the current seats, or print the page. A duplicate name, an over-full table, or an unseated guest asks you to confirm before the file is saved. Nothing is uploaded.',
     ],
     sections: [
       {
@@ -481,13 +484,13 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'The check panel',
         paragraphs: [
-          'After you generate, and again after every move, the panel reads the current chart. A Pass line means that check is clear. A Check line names what needs a look. Every accepted guest should appear once. Duplicate names from the paste are listed and were not seated a second time. Any table with more guests than the seat limit is named. Guests with no seat are listed. A group that is not all at one table is named, including a group that had more people than one table can hold. Keep-apart pairs who still share a table are named. If you typed a keep-apart name that matches nobody, that name is listed too.',
+          'The panel sits above the tables. After you generate, and again after every move, it reads the current chart. A Pass line means that check is clear. A Check line names what needs a look. Every accepted guest should appear once. Duplicate names from the paste are listed and were not seated a second time. Any table with more guests than the seat limit is named. Guests with no seat are listed. A group that is not all at one table is named, including a group that had more people than one table can hold. Keep-apart pairs who still share a table are named. If you typed a keep-apart name that matches nobody, that name is listed too.',
         ],
       },
       {
         heading: 'Export and print',
         paragraphs: [
-          'Download PNG draws the current tables in this browser, including moves you made after generating. Download CSV writes Table, Seat, Name, and Group. Seat 1 is the first person clockwise from the top. Unseated guests are included with the table name Unseated and a blank seat. Print opens your browser’s print dialog, where you can choose a printer or Save as PDF. The dialog hides the form and keeps the tables and the check panel.',
+          'Download PNG draws the current tables in this browser, including moves you made after generating. Download CSV writes Table, Seat, Name, and Group. Seat 1 is the first person clockwise from the top. Unseated guests are included with the table name Unseated and a blank seat. If duplicate names, an over-full table, or an unseated guest is marked, those downloads list the failed checks and wait for Export anyway or Cancel. When those checks pass, the file saves immediately. Print opens your browser’s print dialog, where you can choose a printer or Save as PDF. The dialog hides the form and keeps the tables and the check panel.',
         ],
       },
       {
@@ -529,7 +532,7 @@ export const tools: ToolDefinition[] = [
       {
         question: 'Can I move people after generating?',
         answer:
-          'Yes. Drag a name to another table or to Unseated, or use Move a guest. A move can put more people at a table than the seat limit. The check panel marks that table. Download PNG and Download CSV use the chart after your moves.',
+          'Yes. Drag a name to another table or to Unseated, or use Move a guest. A move can put more people at a table than the seat limit. The check panel marks that table. Download PNG and Download CSV use the chart after your moves. If duplicate names, an over-full table, or an unseated guest is marked, those downloads ask you to confirm before saving the file.',
       },
     ],
     related: ['tournament-bracket-generator', 'super-bowl-squares-generator', 'ai-org-chart-generator'],
@@ -552,23 +555,23 @@ export const tools: ToolDefinition[] = [
     buttonLabel: 'Draw an org chart',
     cardCta: 'Draw an Org Chart →',
     intro:
-      'Paste a row for each person, or open a CSV, and draw an org chart. Each row is a name, a title, and a manager. Click a person to hide the people under them. The tree is built in this browser from those rows. It does not call a language model.',
+      'Every box and reporting line can be traced back to a row you paste or open, and the chart is computed in this browser. Each row is a name, a title, and a manager. Click a person to hide the people under them.',
     disclaimer:
-      'The drawing follows the rows you provide and the checks below. It is not a directory or an HR system. The file stays in this browser and is not saved.',
+      'The drawing follows the rows you provide and the checks below. This page does not call a language model. It is not a directory or an HR system. The file stays in this browser and is not saved.',
     howToTitle: 'How to use this org chart generator',
     howTo: [
       'Paste one person per row: name, title, then the manager’s name. Leave the manager blank for the person at the top.',
       'Or press Upload CSV. The file is copied into the box on this page. It is not uploaded.',
       'Leave “First row is column names” checked when the first row says Name, Title, and Manager. Uncheck it when the first row is a person.',
       'Press Generate. Load sample fills an example company and draws it.',
-      'Click a person to hide or show the people who report to them. Press Download PNG or Download SVG for the chart as it looks now.',
+      'Click a person to hide or show the people who report to them. Read the check panel above the chart, then press Download PNG or Download SVG. If a duplicate name, a missing manager, more than one person at the top, or a reporting loop is marked, the download asks you to confirm first.',
     ],
     features: [
       'Builds a top-down org chart from pasted rows or from a CSV opened on this page.',
       'Recognizes Name, Title, and Manager headings, and falls back to the first three columns when those headings are missing.',
       'Click a person to collapse or expand the people under them.',
       'Check panel flags duplicate names, managers who are not on the list, more than one person at the top, and reporting loops.',
-      'Download a PNG or an SVG of the current chart. The file never leaves this browser.',
+      'Download a PNG or an SVG of the current chart. A duplicate name, a missing manager, more than one person at the top, or a reporting loop asks you to confirm before the file is saved. The file never leaves this browser.',
     ],
     sections: [
       {
@@ -588,7 +591,7 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'Export',
         paragraphs: [
-          'Download SVG saves the drawing you see, including branches you have collapsed. Download PNG makes a picture of that same drawing in this browser. Neither file is uploaded. The chart is not written to local storage. A refresh clears it.',
+          'Download SVG saves the drawing you see, including branches you have collapsed. Download PNG makes a picture of that same drawing in this browser. If a duplicate name, a missing manager, more than one person at the top, or a reporting loop is marked, those downloads list the failed checks and wait for Export anyway or Cancel. When those checks pass, the file saves immediately. Neither file is uploaded. The chart is not written to local storage. A refresh clears it.',
         ],
       },
       {
@@ -630,7 +633,7 @@ export const tools: ToolDefinition[] = [
       {
         question: 'Can I collapse a branch and export it?',
         answer:
-          'Yes. Click a person to hide or show the people under them. Download PNG and Download SVG use the chart as it is on screen, including branches you have hidden.',
+          'Yes. Click a person to hide or show the people under them. Download PNG and Download SVG use the chart as it is on screen, including branches you have hidden. If a duplicate name, a missing manager, more than one person at the top, or a reporting loop is marked, those downloads ask you to confirm before saving the file.',
       },
     ],
     related: ['ai-funnel-chart-generator', 'ai-seating-chart-generator', 'tournament-bracket-generator'],
@@ -653,9 +656,9 @@ export const tools: ToolDefinition[] = [
     buttonLabel: 'Make a funnel chart',
     cardCta: 'Make a Funnel Chart →',
     intro:
-      'Paste a CSV, open a file, or type the stages yourself, and draw a funnel chart. Each stage shows its value, the share of the stage above, and the share of the top. Select a stage to see the rows behind the number. The math runs in this browser. It does not call a language model.',
+      'Every stage number can be traced back to its source rows, and the chart is computed in this browser. Paste a CSV, open a file, or type the stages. Each stage shows its value, the share of the stage above, and the share of the top. Select a stage to see the rows behind the number.',
     disclaimer:
-      'The numbers are the sum or the count of the rows you chose, not a forecast. A file you open stays in this browser and is not saved. This page does not connect to Tableau.',
+      'The numbers are the sum or the count of the rows you chose, not a forecast. This page does not call a language model. A file you open stays in this browser and is not saved. This page does not connect to Tableau.',
     howToTitle: 'How to use this funnel chart generator',
     howTo: [
       'Choose Paste or upload a CSV, or choose Type stages and values.',
@@ -663,14 +666,14 @@ export const tools: ToolDefinition[] = [
       'Pick the stage column. Then either sum a value column or count the rows in each stage. Leave “First row is column names” checked when the first row is headings.',
       'For typed stages, enter one stage per line: the name, a comma, and the number.',
       'Press Generate. Load sample fills a small CSV and draws it. Click a stage to read how its number was computed and to see the rows.',
-      'Use Up and Down to change the stage order. That changes the percentages, not the stage values. Then download a PNG, an SVG, or a CSV of the computed table.',
+      'Use Up and Down to change the stage order. That changes the percentages, not the stage values. Then download a PNG, an SVG, or a CSV of the computed table. If blank stages were left out, a value was not a number, a row is an exact duplicate, or the stage sum does not match the column total, the download asks you to confirm first.',
     ],
     features: [
       'Reads a pasted or uploaded CSV, or stages you type, without sending the file anywhere.',
       'Sums a value column for each stage, or counts the rows in that stage.',
       'Shows the share of the previous stage and the share of the top stage.',
       'Click a stage to see the calculation in words and the source rows that produced the number.',
-      'A reconciliation panel counts rows, blanks, duplicates, and the sum of the stages against the column total. Export PNG, SVG, or CSV.',
+      'A reconciliation panel beside the chart counts rows, blanks, duplicates, and the sum of the stages against the column total. Export asks you to confirm when a blank stage, a non-numeric value, an exact duplicate row, or a stage-sum mismatch is present.',
     ],
     sections: [
       {
@@ -690,15 +693,15 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'Reconciliation',
         paragraphs: [
-          'The panel under the chart is there so you can check the drawing against the file. For a CSV it shows how many data rows were read, how many were left out because the stage was blank, and which stage labels appeared on more than one row and were combined. An exact duplicate of an earlier row is counted and is still included, because the file contained it. When you sum a column, it also counts rows left out because the value was not a number, and it compares the sum of the stages with the sum of every numeric value in that column. A gap is the numeric values on rows with a blank stage, when that is what explains it.',
-          'For typed stages, the panel shows how many lines were read, how many were skipped because the stage or the value was missing or not a number, and any stage that was typed more than once. Those repeated lines are added together.',
+          'The panel sits beside the chart on a wide screen and above it on a narrow one, so you can check the drawing against the file without passing the chart first. For a CSV it shows how many data rows were read, how many were left out because the stage was blank, and which stage labels appeared on more than one row and were combined. An exact duplicate of an earlier row is counted and is still included, because the file contained it. When you sum a column, it also counts rows left out because the value was not a number, and it compares the sum of the stages with the sum of every numeric value in that column. A gap is the numeric values on rows with a blank stage, when that is what explains it.',
+          'For typed stages, the panel shows how many lines were read, how many were skipped because the stage or the value was missing or not a number, any stage that was typed more than once, and exact duplicate lines. Repeated lines are added together and are still included.',
         ],
       },
       {
         heading: 'Files and export',
         paragraphs: [
           'Upload CSV reads the file with the browser’s file reader and puts the text in the box. BabelDoc does not receive it. This page does not sign in to Tableau, Google Sheets, or Excel. If you exported a CSV from one of those, you can paste or open that file here. The limit is 1.5 MB and 5,000 data rows.',
-          'Download PNG and Download SVG save the drawing. Download CSV saves the computed table: stage, value, row count, percent of previous, percent of top, and the calculation sentence. A blank percentage is left blank in the file. Nothing is stored after you leave the page.',
+          'Download PNG and Download SVG save the drawing. Download CSV saves the computed table: stage, value, row count, percent of previous, percent of top, and the calculation sentence. A blank percentage is left blank in the file. If blank stages were excluded, a value was not a number, a row is an exact duplicate, or the stage sum does not match the column total, those downloads list the failed checks and wait for Export anyway or Cancel. When those checks pass, the file saves immediately. Nothing is stored after you leave the page.',
         ],
       },
       {
@@ -735,12 +738,12 @@ export const tools: ToolDefinition[] = [
       {
         question: 'What does the reconciliation panel show?',
         answer:
-          'For a CSV it shows the data-row count, blank stages, repeated stage labels that were combined, and exact duplicate rows, which are still included. When you sum a column, it also shows non-numeric values that were left out, and the sum of the stages next to the sum of the numeric values in that column. For typed stages it shows how many lines were read, how many were skipped, and stages that were typed more than once.',
+          'For a CSV it shows the data-row count, blank stages, repeated stage labels that were combined, and exact duplicate rows, which are still included. When you sum a column, it also shows non-numeric values that were left out, and the sum of the stages next to the sum of the numeric values in that column. For typed stages it shows how many lines were read, how many were skipped, stages that were typed more than once, and exact duplicate lines.',
       },
       {
         question: 'Can I export the chart?',
         answer:
-          'Yes. Download PNG and Download SVG save the drawing. Download CSV saves the computed table: stage, value, row count, percent of previous, percent of top, and the calculation sentence. All three are made in this browser.',
+          'Yes. Download PNG and Download SVG save the drawing. Download CSV saves the computed table: stage, value, row count, percent of previous, percent of top, and the calculation sentence. All three are made in this browser. If blank stages were excluded, a value was not a number, a row is an exact duplicate, or the stage sum does not match the column total, the download asks you to confirm first.',
       },
     ],
     related: ['ai-org-chart-generator', 'ai-seating-chart-generator', 'tournament-bracket-generator'],
@@ -1001,7 +1004,10 @@ export function toolsByCategory(): { category: (typeof categories)[number]; tool
   return categories
     .map((category) => ({
       category,
-      tools: tools.filter((tool) => tool.category === category.id),
+      tools: [
+        ...tools.filter((tool) => tool.category === category.id),
+        ...tools.filter((tool) => tool.category !== category.id && tool.alsoOn?.includes(category.id)),
+      ],
     }))
     .filter((group) => group.tools.length > 0);
 }

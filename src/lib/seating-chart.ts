@@ -52,6 +52,8 @@ export interface SeatingPlan {
 export interface SeatingCheck {
   ok: boolean;
   text: string;
+  /** When true, a failed check asks before PNG or CSV export. */
+  blocksExport?: boolean;
 }
 
 export function parseGuestList(text: string): SeatingParse {
@@ -357,14 +359,15 @@ export function seatingChecks(
       : { ok: false, text: 'Check: the chart does not list every guest exactly once.' },
     duplicateNames.length === 0
       ? { ok: true, text: 'Pass: the guest list has no duplicate names.' }
-      : { ok: false, text: `Check: duplicate names were kept once: ${joinNames(duplicateNames)}.` },
+      : { ok: false, blocksExport: true, text: `Check: duplicate names were kept once: ${joinNames(duplicateNames)}.` },
     over.length === 0
       ? { ok: true, text: `Pass: no table is over its ${seatsPerTable}-seat limit.` }
-      : { ok: false, text: `Check: ${over.join('. ')}.` },
+      : { ok: false, blocksExport: true, text: `Check: ${over.join('. ')}.` },
     unseatedNames.length === 0
       ? { ok: true, text: 'Pass: every guest has a seat.' }
       : {
           ok: false,
+          blocksExport: true,
           text: `Check: ${unseatedNames.length} ${unseatedNames.length === 1 ? 'guest has' : 'guests have'} no seat: ${joinNames(unseatedNames)}.`,
         },
   ];
