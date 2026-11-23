@@ -54,6 +54,13 @@ const crumbs = [
       </ol>
     </section>
 
+    <section id="features" class:list={['mt-10', wide && 'max-w-3xl']}>
+      <h2 class="font-serif text-2xl text-ink">Features</h2>
+      <ul class="mt-4 list-disc space-y-2 pl-5">
+        {tool.features.map((feature) => <li class="pl-1">{feature}</li>)}
+      </ul>
+    </section>
+
     {
       tool.sections.map((section) => (
         <section class:list={['mt-10', wide && 'max-w-3xl']}>
@@ -90,12 +97,6 @@ const crumbs = [
                   {item.name}
                 </a>
                 <p class="mt-2 text-sm leading-6 text-muted">{item.cardBlurb}</p>
-                <a
-                  class="mt-3 inline-flex w-fit items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink no-underline hover:bg-ink hover:text-paper"
-                  href={`/tools/${item.slug}/`}
-                >
-                  {item.buttonLabel}
-                </a>
               </li>
             ))}
           </ul>
