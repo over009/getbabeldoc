@@ -1,0 +1,609 @@
+---
+// Seating chart. Guest names stay in this browser. Assignment uses fixed rules, not a model.
+---
+
+<div data-seating class="rounded-lg border border-line bg-white p-4 sm:p-5">
+  <p class="text-sm leading-6 text-muted">
+    Paste a guest list and generate a chart. Assignment uses fixed rules on this page. The same list always gives the same seats. Names are not uploaded.
+  </p>
+
+  <div class="no-print mt-4">
+    <label for="seating-guests" class="block text-sm font-semibold">Guest list</label>
+    <textarea
+      id="seating-guests"
+      class="mt-1 min-h-40 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-6 text-ink"
+      rows="8"
+      data-field="guests"
+      placeholder={'Avery Chen, Speakers\nBlake Ortiz, Speakers\nJules Moreau'}
+      autocomplete="off"
+      spellcheck="false"
+    ></textarea>
+    <p id="seating-guests-help" data-guest-count class="mt-2 text-sm leading-6 text-muted">
+      One guest per line. A comma adds a group, as in “Avery Chen, Speakers”. People in the same group sit together when the table can hold them.
+    </p>
+  </div>
+
+  <div class="no-print mt-4 grid gap-3 sm:grid-cols-2">
+    <div>
+      <label for="seating-tables" class="block text-sm font-semibold">Tables</label>
+      <input
+        id="seating-tables"
+        class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        type="number"
+        min="1"
+        max="30"
+        value="3"
+        data-field="tables"
+      />
+    </div>
+    <div>
+      <label for="seating-seats" class="block text-sm font-semibold">Seats per table</label>
+      <input
+        id="seating-seats"
+        class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink"
+        type="number"
+        min="1"
+        max="12"
+        value="8"
+        data-field="seats"
+      />
+    </div>
+  </div>
+
+  <div class="no-print mt-4">
+    <label for="seating-apart" class="block text-sm font-semibold">Keep apart <span class="font-normal text-muted">(optional)</span></label>
+    <textarea
+      id="seating-apart"
+      class="mt-1 min-h-20 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-6 text-ink"
+      rows="3"
+      data-field="apart"
+      placeholder={'Avery Chen, Jules Moreau'}
+      autocomplete="off"
+      spellcheck="false"
+    ></textarea>
+    <p class="mt-2 text-sm leading-6 text-muted">One pair per line. Those two sit at different tables when another seat is open.</p>
+  </div>
+
+  <div class="no-print mt-4 flex flex-wrap gap-2">
+    <button type="button" data-action="generate" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Generate
+    </button>
+    <button type="button" data-action="sample" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Load sample
+    </button>
+  </div>
+
+  <div data-results class="mt-6" hidden>
+    <p data-summary class="text-sm leading-6 text-muted"></p>
+    <div data-board class="mt-4 grid gap-8 sm:grid-cols-2"></div>
+    <div
+      data-unseated
+      class="mt-6 rounded-lg border border-dashed border-line bg-paper p-3"
+    >
+      <p class="text-sm font-semibold">Unseated</p>
+      <div data-unseated-list class="mt-2 flex flex-wrap gap-2"></div>
+      <p data-unseated-empty class="mt-2 text-sm leading-6 text-muted">Drop a guest here to take them off a table.</p>
+    </div>
+
+    <div class="no-print mt-4 flex flex-wrap items-end gap-2">
+      <label class="block text-sm">
+        <span class="font-semibold">Move a guest</span>
+        <select data-move-guest class="mt-1 block rounded-md border border-line bg-paper px-3 py-2 text-ink"></select>
+      </label>
+      <label class="block text-sm">
+        <span class="font-semibold">To</span>
+        <select data-move-target class="mt-1 block rounded-md border border-line bg-paper px-3 py-2 text-ink"></select>
+      </label>
+      <button type="button" data-action="move" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Move
+      </button>
+    </div>
+
+    <div class="mt-6" role="region" aria-labelledby="seating-checks-title">
+      <p id="seating-checks-title" class="font-serif text-xl text-ink">Check panel</p>
+      <ul data-checks class="mt-3 space-y-2 text-sm leading-6"></ul>
+    </div>
+
+    <div class="no-print mt-4 flex flex-wrap gap-2">
+      <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download PNG
+      </button>
+      <button type="button" data-action="csv" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download CSV
+      </button>
+      <button type="button" data-action="print" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Print
+      </button>
+    </div>
+  </div>
+
+  <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to generate the chart, move guests, and export a PNG or CSV. The guide further down this page stays readable either way.
+    </p>
+  </noscript>
+</div>
+
+<script is:inline>
+  document.documentElement.dataset.seatingPage = 'true';
+</script>
+
+<style>
+  :global(.seat-stage) {
+    position: relative;
+    height: 340px;
+  }
+
+  :global(.seat-round) {
+    position: absolute;
+    inset: 18%;
+    border: 2px solid #cbbba8;
+    border-radius: 9999px;
+    background: #fff;
+  }
+
+  :global(.seat-center) {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7rem;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  :global(.seat-chip) {
+    position: absolute;
+    z-index: 1;
+    max-width: 7.25rem;
+    transform: translate(-50%, -50%);
+    border: 1px solid #e4dcd0;
+    border-radius: 9999px;
+    background: #fff;
+    padding: 0.2rem 0.55rem;
+    text-align: center;
+    line-height: 1.2;
+    cursor: grab;
+  }
+
+  :global(.seat-chip:active) {
+    cursor: grabbing;
+  }
+
+  :global(.seat-chip-inline) {
+    position: static;
+    transform: none;
+    max-width: 14rem;
+  }
+
+  :global(.seat-drop) {
+    outline: 2px solid #7c2d12;
+    outline-offset: 3px;
+  }
+
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+
+    :global(html[data-seating-page] header),
+    :global(html[data-seating-page] footer),
+    :global(html[data-seating-page] .ad-slot),
+    :global(html[data-seating-page] article > nav),
+    :global(html[data-seating-page] article > header p),
+    :global(html[data-seating-page] article > section),
+    :global(html[data-seating-page] .tool-disclaimer) {
+      display: none !important;
+    }
+
+    :global(html[data-seating-page] body) {
+      background: #fff !important;
+    }
+
+    :global(html[data-seating-page] main),
+    :global(html[data-seating-page] article) {
+      max-width: none !important;
+    }
+  }
+</style>
+
+<script>
+  import { downloadBlob, downloadText } from '../lib/download';
+  import {
+    SAMPLE_GUESTS,
+    SAMPLE_SEATS,
+    SAMPLE_TABLES,
+    SEATING_LIMITS,
+    assignSeats,
+    moveGuest,
+    parseApart,
+    parseGuestList,
+    seatAngles,
+    seatingChecks,
+    seatingCsv,
+    type SeatingCheck,
+    type SeatingGuest,
+    type SeatingIssue,
+    type SeatingPlan,
+  } from '../lib/seating-chart';
+
+  const root = document.querySelector('[data-seating]');
+  if (root) {
+    const guestBox = root.querySelector('[data-field="guests"]');
+    const apartBox = root.querySelector('[data-field="apart"]');
+    const tableInput = root.querySelector('[data-field="tables"]');
+    const seatInput = root.querySelector('[data-field="seats"]');
+    const guestCount = root.querySelector('[data-guest-count]');
+    const results = root.querySelector('[data-results]');
+    const summary = root.querySelector('[data-summary]');
+    const board = root.querySelector('[data-board]');
+    const unseatedList = root.querySelector('[data-unseated-list]');
+    const unseatedEmpty = root.querySelector('[data-unseated-empty]');
+    const checks = root.querySelector('[data-checks]');
+    const status = root.querySelector('[data-status]');
+    const moveGuestSelect = root.querySelector('[data-move-guest]');
+    const moveTargetSelect = root.querySelector('[data-move-target]');
+
+    if (
+      guestBox instanceof HTMLTextAreaElement &&
+      apartBox instanceof HTMLTextAreaElement &&
+      tableInput instanceof HTMLInputElement &&
+      seatInput instanceof HTMLInputElement &&
+      guestCount instanceof HTMLElement &&
+      results instanceof HTMLElement &&
+      summary instanceof HTMLElement &&
+      board instanceof HTMLElement &&
+      unseatedList instanceof HTMLElement &&
+      unseatedEmpty instanceof HTMLElement &&
+      checks instanceof HTMLElement &&
+      status instanceof HTMLElement &&
+      moveGuestSelect instanceof HTMLSelectElement &&
+      moveTargetSelect instanceof HTMLSelectElement
+    ) {
+      let guests: SeatingGuest[] = [];
+      let issues: SeatingIssue[] = [];
+      let pairs: [string, string][] = [];
+      let unknown: string[] = [];
+      let apartWasSet = false;
+      let plan: SeatingPlan | null = null;
+      let seatLimit = SAMPLE_SEATS;
+
+      const setStatus = (message: string) => {
+        status.textContent = message;
+      };
+
+      const readCount = (input: HTMLInputElement, max: number): number | null => {
+        const value = Number(input.value);
+        if (!Number.isInteger(value) || value < 1 || value > max) return null;
+        return value;
+      };
+
+      const updateCount = () => {
+        const parsed = parseGuestList(guestBox.value);
+        if (parsed.blocked) {
+          guestCount.textContent = parsed.blocked;
+          return;
+        }
+        const duplicateCount = parsed.issues.filter((issue) => issue.kind === 'duplicate').length;
+        const duplicateNote = duplicateCount === 0 ? '' : ` ${duplicateCount} duplicate ${duplicateCount === 1 ? 'name is' : 'names are'} ignored until you remove them.`;
+        guestCount.textContent = parsed.guests.length === 0
+          ? 'One guest per line. A comma adds a group, as in “Avery Chen, Speakers”. People in the same group sit together when the table can hold them.'
+          : `${parsed.guests.length} ${parsed.guests.length === 1 ? 'guest' : 'guests'} ready.${duplicateNote}`;
+      };
+
+      const chip = (guest: SeatingGuest, point?: { x: number; y: number }) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = point ? 'seat-chip' : 'seat-chip seat-chip-inline';
+        button.draggable = true;
+        button.dataset.guest = guest.id;
+        if (point) {
+          button.style.left = `${point.x}%`;
+          button.style.top = `${point.y}%`;
+        }
+        const name = document.createElement('span');
+        name.className = 'block truncate text-xs font-semibold';
+        name.textContent = guest.name;
+        button.append(name);
+        if (guest.group) {
+          const group = document.createElement('span');
+          group.className = 'block truncate text-[11px] text-muted';
+          group.textContent = guest.group;
+          button.append(group);
+        }
+        button.title = guest.group ? `${guest.name} (${guest.group}). Drag to another table.` : `${guest.name}. Drag to another table.`;
+        return button;
+      };
+
+      const fillSelect = (select: HTMLSelectElement, options: { value: string; label: string }[], current: string) => {
+        select.replaceChildren();
+        for (const option of options) {
+          const node = document.createElement('option');
+          node.value = option.value;
+          node.textContent = option.label;
+          select.append(node);
+        }
+        if (options.some((option) => option.value === current)) select.value = current;
+      };
+
+      const render = () => {
+        if (!plan) return;
+        const byId = new Map(guests.map((guest) => [guest.id, guest]));
+        const seated = plan.tables.reduce((sum, table) => sum + table.guestIds.length, 0);
+        summary.textContent = `${guests.length} guests, ${plan.tables.length} tables, ${seatLimit} seats each. ${seated} seated, ${plan.unseated.length} unseated.`;
+        board.replaceChildren();
+        plan.tables.forEach((table, index) => {
+          const card = document.createElement('article');
+          card.dataset.table = String(index);
+          card.setAttribute('aria-label', `Table ${index + 1}`);
+          const stage = document.createElement('div');
+          stage.className = 'seat-stage';
+          const round = document.createElement('div');
+          round.className = 'seat-round';
+          const center = document.createElement('div');
+          center.className = 'seat-center';
+          const title = document.createElement('p');
+          title.className = 'font-serif text-lg text-ink';
+          title.textContent = `Table ${index + 1}`;
+          const count = document.createElement('p');
+          count.className = 'text-xs text-muted';
+          count.textContent = `${table.guestIds.length} of ${seatLimit}`;
+          center.append(title, count);
+          round.append(center);
+          stage.append(round);
+          const angles = seatAngles(table.guestIds.length);
+          table.guestIds.forEach((id, seatIndex) => {
+            const guest = byId.get(id);
+            const point = angles[seatIndex];
+            if (guest && point) stage.append(chip(guest, point));
+          });
+          card.append(stage);
+          board.append(card);
+        });
+
+        unseatedList.replaceChildren();
+        for (const id of plan.unseated) {
+          const guest = byId.get(id);
+          if (guest) unseatedList.append(chip(guest));
+        }
+        unseatedEmpty.hidden = plan.unseated.length > 0;
+
+        const panel = seatingChecks(guests, plan, seatLimit, issues, pairs, unknown, apartWasSet);
+        checks.replaceChildren();
+        for (const item of panel) checks.append(checkItem(item));
+
+        fillSelect(
+          moveGuestSelect,
+          guests.map((guest) => ({ value: guest.id, label: guest.name })),
+          moveGuestSelect.value,
+        );
+        const targets = [
+          ...plan.tables.map((_, index) => ({ value: String(index), label: `Table ${index + 1}` })),
+          { value: 'unseated', label: 'Unseated' },
+        ];
+        fillSelect(moveTargetSelect, targets, moveTargetSelect.value);
+        results.hidden = false;
+      };
+
+      const checkItem = (item: SeatingCheck) => {
+        const li = document.createElement('li');
+        li.dataset.ok = item.ok ? 'true' : 'false';
+        li.className = item.ok ? 'text-ink' : 'text-accent';
+        li.textContent = item.text;
+        return li;
+      };
+
+      const applyMove = (guestId: string, target: string) => {
+        if (!plan || !guests.some((guest) => guest.id === guestId)) return;
+        const next = target === 'unseated' ? 'unseated' : Number(target);
+        if (next !== 'unseated' && !Number.isInteger(next)) return;
+        plan = moveGuest(plan, guestId, next);
+        render();
+        const guest = guests.find((item) => item.id === guestId);
+        const place = next === 'unseated' ? 'the unseated list' : `Table ${next + 1}`;
+        setStatus(`${guest?.name ?? 'That guest'} is now at ${place}.`);
+      };
+
+      const paint = (): HTMLCanvasElement | null => {
+        if (!plan) return null;
+        const columns = Math.min(2, Math.max(1, plan.tables.length));
+        const rows = Math.ceil(plan.tables.length / columns);
+        const cell = 460;
+        const header = 48;
+        const footer = 36;
+        const unseatedHeight = plan.unseated.length > 0 ? 72 : 0;
+        const width = columns * cell + 24;
+        const height = header + rows * cell + unseatedHeight + footer;
+        const canvas = document.createElement('canvas');
+        const scale = 2;
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const context = canvas.getContext('2d');
+        if (!context) return null;
+        context.scale(scale, scale);
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, width, height);
+        context.fillStyle = '#1c1917';
+        context.font = '600 22px Georgia, Palatino, serif';
+        context.fillText('Seating chart', 16, 32);
+        const byId = new Map(guests.map((guest) => [guest.id, guest]));
+        plan.tables.forEach((table, index) => {
+          const column = index % columns;
+          const row = Math.floor(index / columns);
+          const left = 12 + column * cell;
+          const top = header + row * cell;
+          const cx = left + cell / 2;
+          const cy = top + cell / 2 - 10;
+          context.beginPath();
+          context.arc(cx, cy, 108, 0, Math.PI * 2);
+          context.fillStyle = '#ffffff';
+          context.fill();
+          context.lineWidth = 2;
+          context.strokeStyle = '#cbbba8';
+          context.stroke();
+          context.fillStyle = '#1c1917';
+          context.font = '600 18px Georgia, Palatino, serif';
+          context.textAlign = 'center';
+          context.fillText(`Table ${index + 1}`, cx, cy - 2);
+          context.font = '13px "Segoe UI", system-ui, sans-serif';
+          context.fillStyle = '#44403c';
+          context.fillText(`${table.guestIds.length} of ${seatLimit}`, cx, cy + 18);
+          const angles = seatAngles(table.guestIds.length, 42);
+          table.guestIds.forEach((id, seatIndex) => {
+            const guest = byId.get(id);
+            const point = angles[seatIndex];
+            if (!guest || !point) return;
+            const x = left + (point.x / 100) * cell;
+            const y = top + (point.y / 100) * (cell - 20);
+            context.fillStyle = '#1c1917';
+            context.font = '600 13px "Segoe UI", system-ui, sans-serif';
+            context.fillText(trimText(context, guest.name, 120), x, y);
+            if (guest.group) {
+              context.fillStyle = '#44403c';
+              context.font = '11px "Segoe UI", system-ui, sans-serif';
+              context.fillText(trimText(context, guest.group, 120), x, y + 14);
+            }
+          });
+          context.textAlign = 'left';
+        });
+        if (plan.unseated.length > 0) {
+          const names = plan.unseated.flatMap((id) => {
+            const guest = byId.get(id);
+            return guest ? [guest.name] : [];
+          });
+          context.fillStyle = '#1c1917';
+          context.font = '600 14px "Segoe UI", system-ui, sans-serif';
+          context.fillText(`Unseated: ${names.join(', ')}`, 16, header + rows * cell + 24);
+        }
+        context.fillStyle = '#44403c';
+        context.font = '12px "Segoe UI", system-ui, sans-serif';
+        context.fillText('getbabeldoc.com', 16, height - 14);
+        return canvas;
+      };
+
+      const trimText = (context: CanvasRenderingContext2D, text: string, max: number) => {
+        if (context.measureText(text).width <= max) return text;
+        let cut = text;
+        while (cut.length > 1 && context.measureText(`${cut}…`).width > max) cut = cut.slice(0, -1);
+        return `${cut}…`;
+      };
+
+      const generate = () => {
+        const parsed = parseGuestList(guestBox.value);
+        if (parsed.blocked) {
+          setStatus(parsed.blocked);
+          return;
+        }
+        if (parsed.guests.length === 0) {
+          setStatus('Add at least one guest, one per line.');
+          return;
+        }
+        const tableCount = readCount(tableInput, SEATING_LIMITS.tables);
+        const seats = readCount(seatInput, SEATING_LIMITS.seats);
+        if (tableCount === null) {
+          setStatus(`Use 1 to ${SEATING_LIMITS.tables} tables.`);
+          return;
+        }
+        if (seats === null) {
+          setStatus(`Use 1 to ${SEATING_LIMITS.seats} seats per table.`);
+          return;
+        }
+        const apart = parseApart(apartBox.value, parsed.guests);
+        guests = parsed.guests;
+        issues = parsed.issues;
+        pairs = apart.pairs;
+        unknown = apart.unknown;
+        apartWasSet = apartBox.value.trim().length > 0;
+        seatLimit = seats;
+        plan = assignSeats(guests, pairs, tableCount, seats);
+        render();
+        const open = tableCount * seats;
+        const note = guests.length > open ? ` ${guests.length - open} ${guests.length - open === 1 ? 'guest does' : 'guests do'} not fit.` : '';
+        setStatus(`Seated ${guests.length} ${guests.length === 1 ? 'guest' : 'guests'} at ${tableCount} ${tableCount === 1 ? 'table' : 'tables'}.${note}`);
+      };
+
+      guestBox.addEventListener('input', updateCount);
+      root.addEventListener('dragstart', (event) => {
+        if (!(event instanceof DragEvent) || !event.dataTransfer) return;
+        const item = event.target instanceof Element ? event.target.closest('[data-guest]') : null;
+        if (!(item instanceof HTMLElement) || !root.contains(item)) return;
+        event.dataTransfer.setData('text/plain', item.dataset.guest ?? '');
+        event.dataTransfer.effectAllowed = 'move';
+      });
+      const clearDrop = () => root.querySelectorAll('.seat-drop').forEach((node) => node.classList.remove('seat-drop'));
+      root.addEventListener('dragover', (event) => {
+        if (!(event instanceof DragEvent)) return;
+        const zone = event.target instanceof Element ? event.target.closest('[data-table], [data-unseated]') : null;
+        if (!(zone instanceof HTMLElement) || !root.contains(zone)) return;
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+        clearDrop();
+        zone.classList.add('seat-drop');
+      });
+      root.addEventListener('drop', (event) => {
+        if (!(event instanceof DragEvent)) return;
+        const id = event.dataTransfer?.getData('text/plain') ?? '';
+        const zone = event.target instanceof Element ? event.target.closest('[data-table], [data-unseated]') : null;
+        if (!(zone instanceof HTMLElement) || !root.contains(zone) || !id) return;
+        event.preventDefault();
+        clearDrop();
+        applyMove(id, zone.hasAttribute('data-unseated') ? 'unseated' : (zone.dataset.table ?? ''));
+      });
+      root.addEventListener('dragend', clearDrop);
+
+      root.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest('[data-action]');
+        if (!(button instanceof HTMLButtonElement) || !root.contains(button)) return;
+        const action = button.dataset.action;
+        if (action === 'generate') {
+          generate();
+          return;
+        }
+        if (action === 'sample') {
+          guestBox.value = SAMPLE_GUESTS;
+          apartBox.value = '';
+          tableInput.value = String(SAMPLE_TABLES);
+          seatInput.value = String(SAMPLE_SEATS);
+          updateCount();
+          generate();
+          setStatus('Loaded the sample list and generated a chart.');
+          return;
+        }
+        if (action === 'move') {
+          applyMove(moveGuestSelect.value, moveTargetSelect.value);
+          return;
+        }
+        if (action === 'csv') {
+          if (!plan) return;
+          downloadText('seating-chart.csv', seatingCsv(guests, plan), 'text/csv;charset=utf-8');
+          setStatus('Downloaded a CSV of the current seats.');
+          return;
+        }
+        if (action === 'png') {
+          const canvas = paint();
+          if (!canvas) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              setStatus('Could not create the PNG in this browser.');
+              return;
+            }
+            downloadBlob('seating-chart.png', blob);
+            setStatus('Downloaded a PNG of this seating chart.');
+          }, 'image/png');
+          return;
+        }
+        if (action === 'print') {
+          setStatus('Opening the print dialog. Choose a printer, or Save as PDF.');
+          window.print();
+        }
+      });
+
+      updateCount();
+    }
+  }
+</script>

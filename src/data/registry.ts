@@ -3,6 +3,9 @@ import TokenCounter from '../tools/token-counter.astro';
 import SuperBowlSquares from '../tools/super-bowl-squares-generator.astro';
 import DiscordTimestamp from '../tools/discord-timestamp-generator.astro';
 import TournamentBracket from '../tools/tournament-bracket-generator.astro';
+import SeatingChart from '../tools/ai-seating-chart-generator.astro';
+import OrgChart from '../tools/ai-org-chart-generator.astro';
+import FunnelChart from '../tools/ai-funnel-chart-generator.astro';
 
 /**
  * Tool registry.
@@ -27,7 +30,13 @@ export const categories = [
     id: 'event-tools',
     name: 'Events & Games',
     navLabel: 'Event Tools',
-    description: 'Make a Super Bowl squares grid or a single-elimination tournament bracket.',
+    description: 'Seat a guest list, make a Super Bowl squares grid, or build a single-elimination bracket.',
+  },
+  {
+    id: 'chart-tools',
+    name: 'Charts & Diagrams',
+    navLabel: 'Chart Tools',
+    description: 'Draw an org chart or a funnel chart from a list or a CSV, in this browser.',
   },
   {
     id: 'time-tools',
@@ -78,7 +87,15 @@ export interface ToolDefinition {
   browserRequirements: string;
   /** Wide tools use the full content column so a diagram can sit beside the reading width. */
   layout?: 'wide';
-  component: typeof WordCounter | typeof TokenCounter | typeof SuperBowlSquares | typeof DiscordTimestamp | typeof TournamentBracket;
+  component:
+    | typeof WordCounter
+    | typeof TokenCounter
+    | typeof SuperBowlSquares
+    | typeof DiscordTimestamp
+    | typeof TournamentBracket
+    | typeof SeatingChart
+    | typeof OrgChart
+    | typeof FunnelChart;
 }
 
 export const tools: ToolDefinition[] = [
@@ -414,11 +431,324 @@ export const tools: ToolDefinition[] = [
           'No. The link stores the sheet in the URL hash on your device. BabelDoc does not keep a copy. Sending the link shows the recipient the names, the digits, the price, and the payout split. This page also saves your edits in local storage in this browser.',
       },
     ],
-    related: ['tournament-bracket-generator', 'word-counter', 'discord-timestamp-generator'],
+    related: ['tournament-bracket-generator', 'ai-seating-chart-generator', 'discord-timestamp-generator'],
     added: '2026-11-19',
     browserRequirements:
       'Requires a modern web browser. JavaScript is required to shuffle numbers, calculate the pot, share a link, and save the sheet on this device. You can still read the guide without JavaScript. Printing uses the browser print dialog.',
     component: SuperBowlSquares,
+  },
+  {
+    slug: 'ai-seating-chart-generator',
+    name: 'AI Seating Chart Generator',
+    h1: 'AI Seating Chart Generator',
+    title: 'AI Seating Chart Generator | BabelDoc',
+    description:
+      'Paste a guest list, set tables and seats, and generate a seating chart in your browser. Groups stay together. Export a PNG or CSV. Nothing is uploaded.',
+    ogTitle: 'Seating chart from a guest list, in your browser',
+    category: 'event-tools',
+    cardBlurb: 'Assign guests to round tables, keep groups together, and export the chart.',
+    buttonLabel: 'Build a seating chart',
+    cardCta: 'Build a Seating Chart →',
+    intro:
+      'Paste a guest list, set how many tables you have, and generate a seating chart. People in the same group sit together when the table can hold them. You can drag someone to another table afterward. The assignment uses fixed rules in this browser. It does not call a language model.',
+    disclaimer:
+      'The chart follows the rules below. It is a planning aid, not a reservation system. Guest names stay in this browser and are not saved.',
+    howToTitle: 'How to use this seating chart generator',
+    howTo: [
+      'Paste one guest per line. To keep people together, add a comma and a group, as in “Avery Chen, Speakers”.',
+      'Set the number of tables and the seats at each table. Every table uses the same seat count.',
+      'Optional: list keep-apart pairs, one pair per line, as in “Avery Chen, Jules Moreau”.',
+      'Press Generate. The same list, tables, seats, and pairs always produce the same chart. Load sample fills an example and generates it.',
+      'Drag a name onto another table, or onto Unseated. You can also pick a guest and a destination, then press Move.',
+      'Read the check panel under the tables. Then press Download PNG, Download CSV, or Print.',
+    ],
+    features: [
+      'Assigns seats automatically so a group shares a table when that group fits and a keep-apart pair does not force a split.',
+      'Draws one round table per table, with each guest’s name around it.',
+      'Drag a guest to another table, or use Move a guest when dragging is awkward.',
+      'Check panel confirms each guest appears once and flags duplicate names, over-full tables, and guests with no seat.',
+      'Download a PNG or a CSV of the current seats, or print the page. Nothing is uploaded.',
+    ],
+    sections: [
+      {
+        heading: 'How seats are assigned',
+        paragraphs: [
+          'A line is read as CSV. The first column is the name and the second is the group. A line with no comma is a guest with no group. Quotes work when a name itself contains a comma, as in “Chen, Avery”, Speakers. Extra columns are ignored, and the check panel says so. Blank lines are skipped. Letter case and repeated spaces do not make a second person: “Avery Chen” and “avery  chen” are the same guest, and only the first spelling is seated.',
+          'Named groups are seated first, largest group first. Groups of the same size go in alphabetical order. A group is placed whole on the table that already has the fewest guests, if that table can hold everyone and nobody in the group must be kept apart from someone at that table or from each other. A tie goes to the lowest table number. People with no group are seated after the groups, one at a time, onto the emptiest table that does not break a keep-apart pair. The same input always gives the same chart. There is no shuffle.',
+          'If a group is larger than the seats at one table, or it contains a keep-apart pair, or no open table can hold it without a clash, its members are seated one at a time. When every open seat would break a keep-apart pair, the guest is seated anyway and the check panel marks the pair. When there is no open seat, the guest is left unseated. This page accepts up to 200 guests, 30 tables, and 12 seats per table. A name longer than 80 characters is shortened.',
+        ],
+      },
+      {
+        heading: 'The check panel',
+        paragraphs: [
+          'After you generate, and again after every move, the panel reads the current chart. A Pass line means that check is clear. A Check line names what needs a look. Every accepted guest should appear once. Duplicate names from the paste are listed and were not seated a second time. Any table with more guests than the seat limit is named. Guests with no seat are listed. A group that is not all at one table is named, including a group that had more people than one table can hold. Keep-apart pairs who still share a table are named. If you typed a keep-apart name that matches nobody, that name is listed too.',
+        ],
+      },
+      {
+        heading: 'Export and print',
+        paragraphs: [
+          'Download PNG draws the current tables in this browser, including moves you made after generating. Download CSV writes Table, Seat, Name, and Group. Seat 1 is the first person clockwise from the top. Unseated guests are included with the table name Unseated and a blank seat. Print opens your browser’s print dialog, where you can choose a printer or Save as PDF. The dialog hides the form and keeps the tables and the check panel.',
+        ],
+      },
+      {
+        heading: 'What this page does not do',
+        paragraphs: [
+          'It does not call a language model, score guests, or learn from past events. “AI” in the title is the phrase people search for. The seats come from the rules above.',
+          'It does not save the list on this device or on a BabelDoc server. A refresh clears the chart. It does not email guests, take payments, or draw a floor plan of a real room. Dragging can put a table over its seat limit on purpose, so you can override the assignment. The check panel will say so.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'The guest list and the keep-apart pairs stay in this browser. Generating, dragging, printing, and the downloads do not send them to BabelDoc. This page does not write them to local storage.',
+          'If analytics is on, it records the visit, not the names. The privacy policy has the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does this use an AI model?',
+        answer:
+          'No. The title says AI because that is the phrase people search for. The chart is built in your browser with fixed rules: groups sit together when they fit, the emptiest suitable table is filled next, and a keep-apart pair is split when another seat is open. No language model is called, and the guest list is not uploaded.',
+      },
+      {
+        question: 'Is the guest list uploaded or saved?',
+        answer:
+          'No. Generating, dragging, printing, and the PNG or CSV download all happen in this browser. This page does not save the list. Closing the tab or refreshing the page clears it.',
+      },
+      {
+        question: 'How does a group stay together?',
+        answer:
+          'The first column is the name and the second is the group. People with the same group, ignoring letter case, share a table when the group fits in the seats per table and a keep-apart pair does not force a split. A group larger than one table is split, and the check panel says so.',
+      },
+      {
+        question: 'What does the check panel verify?',
+        answer:
+          'It checks that every accepted guest appears once, lists duplicate names that were kept only once, marks any table over the seat limit, and lists guests with no seat. It also marks a group that is not all at one table, and a keep-apart pair that still shares a table.',
+      },
+      {
+        question: 'Can I move people after generating?',
+        answer:
+          'Yes. Drag a name to another table or to Unseated, or use Move a guest. A move can put more people at a table than the seat limit. The check panel marks that table. Download PNG and Download CSV use the chart after your moves.',
+      },
+    ],
+    related: ['tournament-bracket-generator', 'super-bowl-squares-generator', 'ai-org-chart-generator'],
+    added: '2026-11-23',
+    layout: 'wide',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to assign seats, drag guests, and download a PNG or CSV. The guide on the page is available without JavaScript. Printing uses the browser print dialog.',
+    component: SeatingChart,
+  },
+  {
+    slug: 'ai-org-chart-generator',
+    name: 'AI Org Chart Generator',
+    h1: 'AI Org Chart Generator',
+    title: 'AI Org Chart Generator | BabelDoc',
+    description:
+      'Paste names, titles, and managers, or open a CSV, and draw an org chart in your browser. Collapse branches. Export PNG or SVG. The file is not uploaded.',
+    ogTitle: 'Org chart from names, titles, and managers',
+    category: 'chart-tools',
+    cardBlurb: 'Turn a name, title, and manager list into a collapsible org chart.',
+    buttonLabel: 'Draw an org chart',
+    cardCta: 'Draw an Org Chart →',
+    intro:
+      'Paste a row for each person, or open a CSV, and draw an org chart. Each row is a name, a title, and a manager. Click a person to hide the people under them. The tree is built in this browser from those rows. It does not call a language model.',
+    disclaimer:
+      'The drawing follows the rows you provide and the checks below. It is not a directory or an HR system. The file stays in this browser and is not saved.',
+    howToTitle: 'How to use this org chart generator',
+    howTo: [
+      'Paste one person per row: name, title, then the manager’s name. Leave the manager blank for the person at the top.',
+      'Or press Upload CSV. The file is copied into the box on this page. It is not uploaded.',
+      'Leave “First row is column names” checked when the first row says Name, Title, and Manager. Uncheck it when the first row is a person.',
+      'Press Generate. Load sample fills an example company and draws it.',
+      'Click a person to hide or show the people who report to them. Press Download PNG or Download SVG for the chart as it looks now.',
+    ],
+    features: [
+      'Builds a top-down org chart from pasted rows or from a CSV opened on this page.',
+      'Recognizes Name, Title, and Manager headings, and falls back to the first three columns when those headings are missing.',
+      'Click a person to collapse or expand the people under them.',
+      'Check panel flags duplicate names, managers who are not on the list, more than one person at the top, and reporting loops.',
+      'Download a PNG or an SVG of the current chart. The file never leaves this browser.',
+    ],
+    sections: [
+      {
+        heading: 'How the rows are read',
+        paragraphs: [
+          'Each data row becomes one person. The name column is required. The title can be blank. A blank manager means that person is drawn at the top. Matching ignores letter case and repeated spaces, so “Avery Chen” and “avery chen” are the same person. A second row with the same name is skipped, and the check panel names the first spelling.',
+          'When the header box is checked, the columns are chosen by their headings. Name, Employee, or Person selects the name. Title, Role, or Position selects the title. Manager, Reports to, or Supervisor selects the manager. If those headings are not all present, the first three columns are used in that order and the panel says so. This page draws up to 150 people. A name longer than 120 characters is shortened.',
+        ],
+      },
+      {
+        heading: 'Loops, missing managers, and several trees',
+        paragraphs: [
+          'A manager must be the name of someone else on the list. A name that matches nobody is reported, and that person is drawn at the top because there is no one to connect them to. A person listed as their own manager is reported, and no link is drawn.',
+          'If the rows loop, for example Avery reports to Blake and Blake reports to Avery, the chart cannot be a single tree until one link is left off. The page keeps the link from the earlier row and drops the later link that would circle back. The check panel names the people in the loop and the link that was left off. If more than one person ends up at the top, both trees are drawn side by side and the panel says so. One person at the top is the usual case, and the panel says Pass for that.',
+        ],
+      },
+      {
+        heading: 'Export',
+        paragraphs: [
+          'Download SVG saves the drawing you see, including branches you have collapsed. Download PNG makes a picture of that same drawing in this browser. Neither file is uploaded. The chart is not written to local storage. A refresh clears it.',
+        ],
+      },
+      {
+        heading: 'What this page does not do',
+        paragraphs: [
+          'It does not call a language model, infer who manages whom, or fill in missing people. “AI” in the title is the phrase people search for. If a manager is not in the list, the panel says so instead of inventing a person.',
+          'It does not import a live directory, sign in to a company account, or edit the source file on disk. Upload CSV only reads a copy into the box.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'Names, titles, and the file you open stay in this browser. They are not sent to BabelDoc and they are not saved by this page.',
+          'If analytics is on, it records the visit, not the rows. The privacy policy has the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does this use an AI model?',
+        answer:
+          'No. The title says AI because that is the phrase people search for. The chart is a tree built in your browser from the rows you paste or from a CSV you open. No language model is called.',
+      },
+      {
+        question: 'Does the file leave this browser?',
+        answer:
+          'No. Upload CSV reads the file into the text box on this page. It is not uploaded and it is not saved. Closing the tab or refreshing the page clears it.',
+      },
+      {
+        question: 'What do the rows mean?',
+        answer:
+          'Each row is a name, a title, and a manager. A blank manager means that person is at the top. If the first row is column names, leave “First row is column names” checked. Name, Title, and Manager are recognized. If those headings are missing, the first three columns are used in that order.',
+      },
+      {
+        question: 'What does the check panel verify?',
+        answer:
+          'It checks that each name is drawn once, that every manager matches a person, that nobody is their own manager, that there is one person at the top, and that the reporting lines do not loop. A missing manager, a second person at the top, a duplicate name, or a loop is marked. A loop is drawn by leaving off the later link that would circle back.',
+      },
+      {
+        question: 'Can I collapse a branch and export it?',
+        answer:
+          'Yes. Click a person to hide or show the people under them. Download PNG and Download SVG use the chart as it is on screen, including branches you have hidden.',
+      },
+    ],
+    related: ['ai-funnel-chart-generator', 'ai-seating-chart-generator', 'tournament-bracket-generator'],
+    added: '2026-11-23',
+    layout: 'wide',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to draw the chart, collapse a branch, read a CSV, and download a PNG or SVG. The guide on the page is available without JavaScript.',
+    component: OrgChart,
+  },
+  {
+    slug: 'ai-funnel-chart-generator',
+    name: 'AI Funnel Chart Generator',
+    h1: 'AI Funnel Chart Generator',
+    title: 'AI Funnel Chart Generator | BabelDoc',
+    description:
+      'Paste or upload a CSV, or type stages, and draw a funnel chart in your browser. See conversion rates and the rows behind each number. Nothing is uploaded.',
+    ogTitle: 'Funnel chart from a CSV, with the math shown',
+    category: 'chart-tools',
+    cardBlurb: 'Chart stage values and conversion rates from a CSV or from numbers you type.',
+    buttonLabel: 'Make a funnel chart',
+    cardCta: 'Make a Funnel Chart →',
+    intro:
+      'Paste a CSV, open a file, or type the stages yourself, and draw a funnel chart. Each stage shows its value, the share of the stage above, and the share of the top. Select a stage to see the rows behind the number. The math runs in this browser. It does not call a language model.',
+    disclaimer:
+      'The numbers are the sum or the count of the rows you chose, not a forecast. A file you open stays in this browser and is not saved. This page does not connect to Tableau.',
+    howToTitle: 'How to use this funnel chart generator',
+    howTo: [
+      'Choose Paste or upload a CSV, or choose Type stages and values.',
+      'For a CSV, paste it or press Upload CSV. A spreadsheet export, or a CSV you downloaded from Tableau, can go in the box. The file is read here and is not uploaded.',
+      'Pick the stage column. Then either sum a value column or count the rows in each stage. Leave “First row is column names” checked when the first row is headings.',
+      'For typed stages, enter one stage per line: the name, a comma, and the number.',
+      'Press Generate. Load sample fills a small CSV and draws it. Click a stage to read how its number was computed and to see the rows.',
+      'Use Up and Down to change the stage order. That changes the percentages, not the stage values. Then download a PNG, an SVG, or a CSV of the computed table.',
+    ],
+    features: [
+      'Reads a pasted or uploaded CSV, or stages you type, without sending the file anywhere.',
+      'Sums a value column for each stage, or counts the rows in that stage.',
+      'Shows the share of the previous stage and the share of the top stage.',
+      'Click a stage to see the calculation in words and the source rows that produced the number.',
+      'A reconciliation panel counts rows, blanks, duplicates, and the sum of the stages against the column total. Export PNG, SVG, or CSV.',
+    ],
+    sections: [
+      {
+        heading: 'How a stage value is computed',
+        paragraphs: [
+          'Stage labels are matched exactly after trimming extra space. “Visit” and “visit” stay separate. The chart lists stages in the order they first appear, until you move one. Sum the value column adds the numbers on rows whose stage cell equals that label. A value can be a plain number, or it can include a dollar sign and thousands separators, such as $1,200. Words and percents are not numbers and those rows are left out. Count rows uses how many rows have that stage, and ignores the value column.',
+          'Select a stage. The panel states the calculation in the form SUM of column “Amount” where “Stage” = “Visit” (2 rows), or COUNT of rows where “Stage” = “Visit” (2 rows). Typed stages say Typed value for “Visit” (1 line). When a sum uses 12 or fewer numbers, the panel also shows the addition, such as 30 + 20 = 50. The source rows are listed under that sentence. A stage with more than 100 rows shows the first 100 and the full count. The total still uses every included row.',
+        ],
+      },
+      {
+        heading: 'Percentages',
+        paragraphs: [
+          'Percent of previous is this stage’s value divided by the stage directly above it, rounded to one decimal. Percent of top is this stage’s value divided by the first stage. The first stage has no previous stage, so that spot is a dash. If the stage you divide by is 0, the percentage is a dash rather than a made-up number. Up and Down change which stage is above which. The stage values stay the same, and both percentages are recalculated from the new order.',
+          'The shape of each band follows the size of the value compared with the largest value. A later stage that is larger than an earlier one is drawn wider. The chart does not force the funnel to shrink.',
+        ],
+      },
+      {
+        heading: 'Reconciliation',
+        paragraphs: [
+          'The panel under the chart is there so you can check the drawing against the file. For a CSV it shows how many data rows were read, how many were left out because the stage was blank, and which stage labels appeared on more than one row and were combined. An exact duplicate of an earlier row is counted and is still included, because the file contained it. When you sum a column, it also counts rows left out because the value was not a number, and it compares the sum of the stages with the sum of every numeric value in that column. A gap is the numeric values on rows with a blank stage, when that is what explains it.',
+          'For typed stages, the panel shows how many lines were read, how many were skipped because the stage or the value was missing or not a number, and any stage that was typed more than once. Those repeated lines are added together.',
+        ],
+      },
+      {
+        heading: 'Files and export',
+        paragraphs: [
+          'Upload CSV reads the file with the browser’s file reader and puts the text in the box. BabelDoc does not receive it. This page does not sign in to Tableau, Google Sheets, or Excel. If you exported a CSV from one of those, you can paste or open that file here. The limit is 1.5 MB and 5,000 data rows.',
+          'Download PNG and Download SVG save the drawing. Download CSV saves the computed table: stage, value, row count, percent of previous, percent of top, and the calculation sentence. A blank percentage is left blank in the file. Nothing is stored after you leave the page.',
+        ],
+      },
+      {
+        heading: 'What this page does not do',
+        paragraphs: [
+          'It does not call a language model, predict a future stage, or decide which column is the stage until you pick one. “AI” in the title is the phrase people search for, including searches about a funnel chart made from a Tableau CSV. The numbers are arithmetic on the rows you supplied.',
+          'It does not drop duplicate rows on its own. It tells you they are there and keeps them in the sum. Remove them from the box if you do not want them counted.',
+        ],
+      },
+      {
+        heading: 'Privacy',
+        paragraphs: [
+          'The CSV and the numbers you type stay in this browser. Reading a file, drawing the chart, and the downloads do not send them to BabelDoc. This page does not save them.',
+          'If analytics is on, it records the visit, not the file. The privacy policy has the site-wide rules.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: 'Does this use an AI model or Tableau?',
+        answer:
+          'No. The title says AI because that is the phrase people search for. The chart is calculated in your browser from the CSV you paste or open, or from numbers you type. It does not call a language model, and it does not connect to Tableau. A CSV you exported from Tableau can be pasted here. The file never leaves this browser.',
+      },
+      {
+        question: 'How is a stage number computed?',
+        answer:
+          'In a CSV, choose the stage column. Sum the value column adds the numbers on rows with that stage. Count rows uses how many of those rows there are. Typed stages use the numbers you entered. Select a stage and the panel states the calculation, for example SUM of column “Amount” where “Stage” = “Visit” (2 rows), and lists the rows. The first 100 rows are shown when a stage has more, and the total still uses every row.',
+      },
+      {
+        question: 'What do the percentages mean?',
+        answer:
+          'Percent of previous is this stage’s value divided by the stage above it. Percent of top is this stage’s value divided by the first stage. The first stage has no previous stage, so that percentage is a dash. If a stage you divide by is 0, the percentage is a dash. Moving a stage with Up or Down changes these percentages. It does not change the stage value.',
+      },
+      {
+        question: 'What does the reconciliation panel show?',
+        answer:
+          'For a CSV it shows the data-row count, blank stages, repeated stage labels that were combined, and exact duplicate rows, which are still included. When you sum a column, it also shows non-numeric values that were left out, and the sum of the stages next to the sum of the numeric values in that column. For typed stages it shows how many lines were read, how many were skipped, and stages that were typed more than once.',
+      },
+      {
+        question: 'Can I export the chart?',
+        answer:
+          'Yes. Download PNG and Download SVG save the drawing. Download CSV saves the computed table: stage, value, row count, percent of previous, percent of top, and the calculation sentence. All three are made in this browser.',
+      },
+    ],
+    related: ['ai-org-chart-generator', 'ai-seating-chart-generator', 'tournament-bracket-generator'],
+    added: '2026-11-23',
+    layout: 'wide',
+    browserRequirements:
+      'Requires a modern web browser. JavaScript is required to read a CSV, calculate the stages, and download a PNG, SVG, or CSV. The guide on the page is available without JavaScript.',
+    component: FunnelChart,
   },
   {
     slug: 'discord-timestamp-generator',
@@ -648,7 +978,7 @@ export const tools: ToolDefinition[] = [
           'No. It is a generic single-elimination bracket for an office pool, an esports night, or a league you run yourself. It is not affiliated with any league or organizer, and it does not use their names or logos.',
       },
     ],
-    related: ['super-bowl-squares-generator', 'token-counter', 'discord-timestamp-generator'],
+    related: ['super-bowl-squares-generator', 'ai-seating-chart-generator', 'discord-timestamp-generator'],
     added: '2026-11-23',
     layout: 'wide',
     browserRequirements:

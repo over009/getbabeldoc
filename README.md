@@ -83,6 +83,9 @@ Do not put secrets in `wrangler.jsonc`. This site has none.
 | `/tools/super-bowl-squares-generator/` | Printable squares sheet |
 | `/tools/discord-timestamp-generator/` | Discord timestamp codes for every chat style |
 | `/tools/tournament-bracket-generator/` | Single-elimination bracket |
+| `/tools/ai-seating-chart-generator/` | Seating chart from a guest list |
+| `/tools/ai-org-chart-generator/` | Org chart from names, titles, and managers |
+| `/tools/ai-funnel-chart-generator/` | Funnel chart from a CSV or typed stages |
 | `/about/` | About |
 | `/privacy/` | Privacy policy |
 | `/terms/` | Terms of use |
