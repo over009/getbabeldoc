@@ -60,11 +60,11 @@ import EarlyBird from '../components/EarlyBird.astro';
       class="mt-1 min-h-20 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 leading-6 text-ink"
       rows="3"
       data-field="apart"
-      placeholder={'Avery Chen, Jules Moreau'}
+      placeholder="Name A, Name B"
       autocomplete="off"
       spellcheck="false"
     ></textarea>
-    <p class="mt-2 text-sm leading-6 text-muted">One pair per line. Those two sit at different tables when another seat is open.</p>
+    <p class="mt-2 text-sm leading-6 text-muted">One pair per line, as in “Avery Chen, Jules Moreau”. Those two sit at different tables when another seat is open.</p>
   </div>
 
   <div class="no-print mt-4 flex flex-wrap gap-2">
@@ -276,7 +276,7 @@ import EarlyBird from '../components/EarlyBird.astro';
       let seatLimit = SAMPLE_SEATS;
       let panelChecks: SeatingCheck[] = [];
       const tool = 'ai-seating-chart-generator';
-      watchChartInput(tool, guestBox);
+      const guestInput = watchChartInput(tool, guestBox);
       const earlyBird = bindEarlyBird(root, tool);
 
       const setStatus = (message: string) => {
@@ -531,7 +531,7 @@ import EarlyBird from '../components/EarlyBird.astro';
         render();
         trackChart(tool, 'chart_rendered');
         const reasons = failedReasons(panelChecks);
-        if (reasons) trackChart(tool, 'check_failed', { reasons });
+        if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'render' });
         const open = tableCount * seats;
         const note = guests.length > open ? ` ${guests.length - open} ${guests.length - open === 1 ? 'guest does' : 'guests do'} not fit.` : '';
         setStatus(`Seated ${guests.length} ${guests.length === 1 ? 'guest' : 'guests'} at ${tableCount} ${tableCount === 1 ? 'table' : 'tables'}.${note}`);
@@ -566,7 +566,7 @@ import EarlyBird from '../components/EarlyBird.astro';
       });
       root.addEventListener('dragend', clearDrop);
 
-      const finishExport = (format: 'csv' | 'png', confirmed: boolean, message: string) => {
+      const finishExport = (format: 'csv' | 'png' | 'print', confirmed: boolean, message: string) => {
         trackChart(tool, 'export_done', { format, export_anyway: confirmed });
         setStatus(message);
         earlyBird.show();
@@ -594,9 +594,16 @@ import EarlyBird from '../components/EarlyBird.astro';
         }, 'image/png');
       };
 
+      const printChart = (confirmed: boolean) => {
+        setStatus('Opening the print dialog. Choose a printer, or Save as PDF.');
+        window.print();
+        finishExport('print', confirmed, 'Opened the print dialog. Choose a printer, or Save as PDF.');
+      };
+
       const exportGate = bindExportConfirm(root, (action, confirmed) => {
         if (action === 'csv') saveCsv(confirmed);
         if (action === 'png') savePng(confirmed);
+        if (action === 'print') printChart(confirmed);
       });
 
       root.addEventListener('click', (event) => {
@@ -614,6 +621,8 @@ import EarlyBird from '../components/EarlyBird.astro';
           apartBox.value = '';
           tableInput.value = String(SAMPLE_TABLES);
           seatInput.value = String(SAMPLE_SEATS);
+          guestInput.note(guestBox.value);
+          trackChart(tool, 'sample_loaded');
           updateCount();
           generate();
           setStatus('Loaded the sample list and generated a chart.');
@@ -623,19 +632,20 @@ import EarlyBird from '../components/EarlyBird.astro';
           applyMove(moveGuestSelect.value, moveTargetSelect.value);
           return;
         }
-        if (action === 'csv' || action === 'png') {
+        if (action === 'csv' || action === 'png' || action === 'print') {
           if (!plan) return;
           trackChart(tool, 'export_click', { format: action });
           const reasons = failedReasons(panelChecks);
-          if (reasons) trackChart(tool, 'check_failed', { reasons });
+          if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'export' });
           const issues = blockingMessages(panelChecks);
-          if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
+          if (issues.length > 0) {
+            setStatus(
+              action === 'print'
+                ? 'These checks did not pass. Press Export anyway to print, or Cancel.'
+                : 'These checks did not pass. Press Export anyway to save the file, or Cancel.',
+            );
+          }
           exportGate.request(action, issues);
-          return;
-        }
-        if (action === 'print') {
-          setStatus('Opening the print dialog. Choose a printer, or Save as PDF.');
-          window.print();
         }
       });
 

@@ -267,7 +267,7 @@ import EarlyBird from '../components/EarlyBird.astro';
         render();
         trackChart(tool, 'chart_rendered');
         const reasons = failedReasons(next.checks);
-        if (reasons) trackChart(tool, 'check_failed', { reasons });
+        if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'render' });
         setStatus(`Drew ${next.people.length} ${next.people.length === 1 ? 'person' : 'people'}.`);
       };
 
@@ -360,6 +360,8 @@ import EarlyBird from '../components/EarlyBird.astro';
         }
         if (button.dataset.action === 'sample') {
           rows.value = SAMPLE_ORG;
+          rowInput.note(rows.value);
+          trackChart(tool, 'sample_loaded');
           headerTouched = true;
           headerBox.checked = true;
           generate();
@@ -371,7 +373,7 @@ import EarlyBird from '../components/EarlyBird.astro';
         if (action === 'svg' || action === 'png') {
           trackChart(tool, 'export_click', { format: action });
           const reasons = failedReasons(model.checks);
-          if (reasons) trackChart(tool, 'check_failed', { reasons });
+          if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'export' });
           const issues = blockingMessages(model.checks);
           if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
           exportGate.request(action, issues);

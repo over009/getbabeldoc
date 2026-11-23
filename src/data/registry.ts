@@ -463,14 +463,14 @@ export const tools: ToolDefinition[] = [
       'Optional: list keep-apart pairs, one pair per line, as in “Avery Chen, Jules Moreau”.',
       'Press Generate. The same list, tables, seats, and pairs always produce the same chart. Load sample fills an example and generates it.',
       'Drag a name onto another table, or onto Unseated. You can also pick a guest and a destination, then press Move.',
-      'Read the check panel above the tables. Then press Download PNG, Download CSV, or Print. If duplicate names, an over-full table, or an unseated guest is marked, the download asks you to confirm first.',
+      'Read the check panel above the tables. Then press Download PNG, Download CSV, or Print. If duplicate names, an over-full table, or an unseated guest is marked, the download or print asks you to confirm first.',
     ],
     features: [
       'Assigns seats automatically so a group shares a table when that group fits and a keep-apart pair does not force a split.',
       'Draws one round table per table, with each guest’s name around it.',
       'Drag a guest to another table, or use Move a guest when dragging is awkward.',
       'Check panel confirms each guest appears once and flags duplicate names, over-full tables, and guests with no seat.',
-      'Download a PNG or a CSV of the current seats, or print the page. A duplicate name, an over-full table, or an unseated guest asks you to confirm before the file is saved. Nothing is uploaded.',
+      'Download a PNG or a CSV of the current seats, or print the page. A duplicate name, an over-full table, or an unseated guest asks you to confirm before the file is saved or the print dialog opens. Nothing is uploaded.',
     ],
     sections: [
       {
@@ -490,7 +490,7 @@ export const tools: ToolDefinition[] = [
       {
         heading: 'Export and print',
         paragraphs: [
-          'Download PNG draws the current tables in this browser, including moves you made after generating. Download CSV writes Table, Seat, Name, and Group. Seat 1 is the first person clockwise from the top. Unseated guests are included with the table name Unseated and a blank seat. If duplicate names, an over-full table, or an unseated guest is marked, those downloads list the failed checks and wait for Export anyway or Cancel. When those checks pass, the file saves immediately. Print opens your browser’s print dialog, where you can choose a printer or Save as PDF. The dialog hides the form and keeps the tables and the check panel.',
+          'Download PNG draws the current tables in this browser, including moves you made after generating. Download CSV writes Table, Seat, Name, and Group. Seat 1 is the first person clockwise from the top. Unseated guests are included with the table name Unseated and a blank seat. If duplicate names, an over-full table, or an unseated guest is marked, Download PNG, Download CSV, and Print list the failed checks and wait for Export anyway or Cancel. When those checks pass, the file saves immediately, or Print opens your browser’s print dialog, where you can choose a printer or Save as PDF. The printed page hides the form and keeps the tables and the check panel.',
         ],
       },
       {
@@ -532,7 +532,7 @@ export const tools: ToolDefinition[] = [
       {
         question: 'Can I move people after generating?',
         answer:
-          'Yes. Drag a name to another table or to Unseated, or use Move a guest. A move can put more people at a table than the seat limit. The check panel marks that table. Download PNG and Download CSV use the chart after your moves. If duplicate names, an over-full table, or an unseated guest is marked, those downloads ask you to confirm before saving the file.',
+          'Yes. Drag a name to another table or to Unseated, or use Move a guest. A move can put more people at a table than the seat limit. The check panel marks that table. Download PNG, Download CSV, and Print use the chart after your moves. If duplicate names, an over-full table, or an unseated guest is marked, those actions ask you to confirm first.',
       },
     ],
     related: ['tournament-bracket-generator', 'super-bowl-squares-generator', 'ai-org-chart-generator'],

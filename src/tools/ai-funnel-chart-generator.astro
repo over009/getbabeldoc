@@ -235,7 +235,7 @@ import EarlyBird from '../components/EarlyBird.astro';
       let measure: 'sum' | 'count' = 'sum';
       const tool = 'ai-funnel-chart-generator';
       const csvInput = watchChartInput(tool, csvBox);
-      watchChartInput(tool, manualBox);
+      const manualInput = watchChartInput(tool, manualBox);
       const earlyBird = bindEarlyBird(root, tool);
 
       const setStatus = (message: string) => {
@@ -481,7 +481,7 @@ import EarlyBird from '../components/EarlyBird.astro';
         render();
         trackChart(tool, 'chart_rendered');
         const reasons = built.model.failedCheckIds.join(',');
-        if (reasons) trackChart(tool, 'check_failed', { reasons });
+        if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'render' });
         setStatus(`Drew ${built.model.stages.length} ${built.model.stages.length === 1 ? 'stage' : 'stages'}. Select a stage to see its rows.`);
       };
 
@@ -570,6 +570,9 @@ import EarlyBird from '../components/EarlyBird.astro';
         }
         if (action === 'sample') {
           csvBox.value = SAMPLE_FUNNEL;
+          csvInput.note(csvBox.value);
+          manualInput.note(manualBox.value);
+          trackChart(tool, 'sample_loaded');
           mode = 'csv';
           measure = 'sum';
           const csvMode = root.querySelector('[data-mode="csv"]');
@@ -592,7 +595,7 @@ import EarlyBird from '../components/EarlyBird.astro';
         if (action === 'csv' || action === 'svg' || action === 'png') {
           trackChart(tool, 'export_click', { format: action });
           const reasons = model.failedCheckIds.join(',');
-          if (reasons) trackChart(tool, 'check_failed', { reasons });
+          if (reasons) trackChart(tool, 'check_failed', { reasons, stage: 'export' });
           const issues = model.exportBlockers;
           if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
           exportGate.request(action, issues);

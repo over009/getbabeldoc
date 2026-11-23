@@ -19,8 +19,14 @@ export function failedReasons(checks: { ok: boolean; id?: string }[]): string {
   return checks.flatMap((check) => (!check.ok && check.id ? [check.id] : [])).join(',');
 }
 
-/** Fires tool_input after a pause, and again only when the text actually changes. */
-export function watchChartInput(tool: string, field: HTMLTextAreaElement): { markLoaded: (text: string) => void } {
+/**
+ * Fires tool_input after a pause, and again only when the text actually changes.
+ * note() remembers a Load sample fill without firing tool_input.
+ */
+export function watchChartInput(
+  tool: string,
+  field: HTMLTextAreaElement,
+): { markLoaded: (text: string) => void; note: (text: string) => void } {
   let last = '';
   let timer = 0;
   const report = (text: string) => {
@@ -37,6 +43,10 @@ export function watchChartInput(tool: string, field: HTMLTextAreaElement): { mar
     markLoaded: (text) => {
       window.clearTimeout(timer);
       report(text);
+    },
+    note: (text: string) => {
+      window.clearTimeout(timer);
+      last = text.trim();
     },
   };
 }
