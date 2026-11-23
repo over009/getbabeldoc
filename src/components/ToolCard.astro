@@ -4,9 +4,11 @@ import type { ToolDefinition } from '../data/registry';
 interface Props {
   tool: ToolDefinition;
   heading?: 'h2' | 'h3';
+  /** Overrides the card button. The homepage passes `tool.cardCta`. */
+  cta?: string;
 }
 
-const { tool, heading = 'h3' } = Astro.props;
+const { tool, heading = 'h3', cta = tool.buttonLabel } = Astro.props;
 const Heading = heading;
 ---
 
@@ -19,6 +21,6 @@ const Heading = heading;
     class="mt-auto inline-flex w-fit items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink no-underline hover:bg-ink hover:text-paper"
     href={`/tools/${tool.slug}/`}
   >
-    {tool.buttonLabel}
+    {cta}
   </a>
 </article>

@@ -1,61 +1,122 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ToolCard from '../components/ToolCard.astro';
-import { latestTools, toolsByCategory } from '../data/registry';
-import { organizationLd, websiteLd } from '../lib/seo';
+import Faq from '../components/Faq.astro';
+import { latestTools, toolsByCategory, type ToolFaq } from '../data/registry';
+import { faqLd, organizationLd, websiteLd } from '../lib/seo';
 
-const title = 'BabelDoc | Everyday Tools, Made Simple';
+const title = 'Free Online Tools – Word Counter, Tokens & More | BabelDoc';
 const description =
-  'Free online tools for everyday tasks. Convert, calculate, and generate right in your browser — fast, simple, and private. No signup needed. Try a tool now.';
-const latest = latestTools();
+  'Count words and tokens, make tournament brackets and Super Bowl squares, and generate Discord timestamps. Free, private, and in your browser. No signup.';
+const fresh = latestTools(2);
 const groups = toolsByCategory();
+
+const faqs: ToolFaq[] = [
+  {
+    question: 'Are BabelDoc tools free?',
+    answer:
+      'Yes. Every tool on BabelDoc is free to use. You do not create an account, and you do not pay to open a page.',
+  },
+  {
+    question: 'Is my data uploaded?',
+    answer:
+      'No. All current tools run locally in the browser. Text you type, a file you open, a squares sheet, a bracket, and a Discord timestamp are not uploaded to BabelDoc. If you copy a share link, the names in a squares sheet or a bracket travel inside that link, and only to the people you send it to.',
+  },
+  {
+    question: 'How often are new tools added?',
+    answer:
+      'New tools are added regularly, roughly once a week. That describes the recent pace, not a fixed schedule. A tool is published when it works, so the gap between pages can be shorter or longer.',
+  },
+];
 ---
 
 <BaseLayout
   title={title}
   description={description}
-  ogTitle="Everyday tools, made simple"
-  ogDescription={description}
-  jsonLd={[websiteLd(description), organizationLd()]}
+  jsonLd={[websiteLd(description), organizationLd(), faqLd(faqs)]}
 >
   <div class="max-w-3xl">
-    <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">Free Everyday Tools, Made Simple</h1>
-    <p class="mt-4 text-lg leading-8">Everyday tools, made simple.</p>
-    <p class="mt-3 leading-7">
-      BabelDoc is a growing library of free, browser-based tools for everyday tasks. Open a page, use the tool, and get a result without an account. Pages are added when they work, not before.
+    <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">Free Online Tools That Run in Your Browser</h1>
+    <p class="mt-4 text-lg leading-8">
+      Count words and tokens, make a Super Bowl squares grid or a tournament bracket, and generate a Discord timestamp. Each tool runs in this browser, with no account.
     </p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a
+        class="inline-flex items-center rounded-md bg-ink px-4 py-2 text-sm font-semibold text-paper no-underline hover:bg-accent"
+        href="/tools/word-counter/"
+      >
+        Try Word Counter
+      </a>
+      <a
+        class="inline-flex items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink no-underline hover:bg-ink hover:text-paper"
+        href="#tools-directory"
+      >
+        Browse All Tools
+      </a>
+    </div>
   </div>
 
-  <section class="mt-12" aria-labelledby="latest-tools">
-    <h2 id="latest-tools" class="font-serif text-2xl text-ink">Latest tools</h2>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-      {latest.map((tool) => <ToolCard tool={tool} />)}
-    </div>
-  </section>
-
   {
-    groups.map((group) => (
-      <section class="mt-12" aria-labelledby={`category-${group.category.id}`}>
-        <h2 id={`category-${group.category.id}`} class="font-serif text-2xl text-ink">
-          {group.category.name}
-        </h2>
-        <p class="mt-2 max-w-3xl leading-7 text-muted">{group.category.description}</p>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          {group.tools.map((tool) => (
-            <ToolCard tool={tool} />
-          ))}
-        </div>
-      </section>
-    ))
+    fresh.length > 0 && (
+      <p class="mt-8 text-sm leading-6 text-muted">
+        <span class="font-semibold text-ink">New:</span>
+        {fresh.map((tool, index) => {
+          const joiner = index === 0 ? ' ' : index === fresh.length - 1 ? ' and ' : ', ';
+          return (
+            <span>
+              {joiner}
+              <a class="text-accent underline-offset-4 hover:underline" href={`/tools/${tool.slug}/`}>
+                {tool.name}
+              </a>
+              {index === fresh.length - 1 ? '.' : ''}
+            </span>
+          );
+        })}
+      </p>
+    )
   }
+
+  <div id="tools-directory" class="mt-12 scroll-mt-6">
+    {
+      groups.map((group, index) => (
+        <section class={index === 0 ? undefined : 'mt-12'} aria-labelledby={group.category.id}>
+          <h2 id={group.category.id} class="scroll-mt-6 font-serif text-2xl text-ink">
+            {group.category.name}
+          </h2>
+          <p class="mt-2 max-w-3xl leading-7 text-muted">{group.category.description}</p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2">
+            {group.tools.map((tool) => (
+              <ToolCard tool={tool} cta={tool.cardCta} />
+            ))}
+          </div>
+        </section>
+      ))
+    }
+  </div>
 
   <section class="mt-12 max-w-3xl" aria-labelledby="why-babeldoc">
     <h2 id="why-babeldoc" class="font-serif text-2xl text-ink">Why use BabelDoc</h2>
-    <ul class="mt-4 list-disc space-y-2 pl-5">
-      <li>The tools are free, and you do not need an account.</li>
-      <li>Tools run in your browser. Text you type, or a file you open in a counter, is not uploaded. A squares sheet or a bracket is saved only on this device, unless you copy a share link.</li>
-      <li>Pages are static and light. JavaScript is limited to the tool that needs it.</li>
-      <li>A tool is published only when it can produce a result. If a later tool needs a server, that page and the privacy policy will say so.</li>
-    </ul>
+    <div class="mt-6 space-y-6">
+      <div>
+        <h3 class="font-serif text-xl text-ink">100% client-side processing</h3>
+        <p class="mt-2 leading-7">
+          The <a class="text-accent underline-offset-4 hover:underline" href="/tools/word-counter/">Word Counter</a> and the other tools process what you enter in this browser. Text, a file you open, a squares sheet, a bracket, and a Discord timestamp are not uploaded. A squares sheet or a bracket can be saved on this device, and a share link holds that data only in the address hash you copy.
+        </p>
+      </div>
+      <div>
+        <h3 class="font-serif text-xl text-ink">No accounts or paywalls</h3>
+        <p class="mt-2 leading-7">
+          Every published tool is free to open. BabelDoc does not ask you to create an account, and it does not put a tool behind a payment.
+        </p>
+      </div>
+      <div>
+        <h3 class="font-serif text-xl text-ink">Lightweight, fast pages</h3>
+        <p class="mt-2 leading-7">
+          Each page is static HTML. JavaScript is limited to the tool on that page, so the reading around it loads with the document.
+        </p>
+      </div>
+    </div>
   </section>
+
+  <Faq items={faqs} heading="Frequently Asked Questions" />
 </BaseLayout>
