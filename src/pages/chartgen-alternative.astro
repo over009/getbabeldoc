@@ -1,0 +1,263 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import ChartgenDemo from '../components/ChartgenDemo.astro';
+import { breadcrumbLd, faqLd } from '../lib/seo';
+import type { ToolFaq } from '../data/registry';
+
+const title = 'ChartGen alternative — ChartGen shutting down | BabelDoc';
+const description =
+  'ChartGen is shutting down on December 14, 2026. This ChartGen alternative charts an exported CSV in your browser. Numbers stay traceable. Nothing is uploaded.';
+const shutdownUrl = 'https://chartgen.ai/';
+const verified = 'November 23, 2026';
+
+const seatingUrl = 'https://getbabeldoc.com/tools/ai-seating-chart-generator/';
+const orgUrl = 'https://getbabeldoc.com/tools/ai-org-chart-generator/';
+const funnelUrl = 'https://getbabeldoc.com/tools/ai-funnel-chart-generator/';
+const notifyUrl = 'https://getbabeldoc.com/chartgen-alternative/#notify';
+
+const faqs: ToolFaq[] = [
+  {
+    question: 'Is my data uploaded?',
+    answer:
+      'No. A CSV you select is read in this browser and is not sent to BabelDoc or to a language model. This page does not fetch projects from ChartGen. The only optional request is the email box, which sends the address and the name chartgen-alternative. The chart stays in this browser.',
+  },
+  {
+    question: 'Is it free or paid?',
+    answer:
+      'The chart on this page is free to use. You do not create an account, and a download is not behind a payment. A Pro plan is planned at $9 per month. After you export, you can leave an email for the early-bird price. Skipping the form does not block the file.',
+  },
+  {
+    question: 'How do ChartGen chart types map to these tools?',
+    answer: `A guest list maps to the AI Seating Chart Generator at ${seatingUrl}. A name, title, and manager list maps to the AI Org Chart Generator at ${orgUrl}. A stage column and a value column map to the AI Funnel Chart Generator at ${funnelUrl}, and to the chart on this page. Bar, line, pie, and heatmap charts are not built yet. Those are on the roadmap, and the email box at ${notifyUrl} is how to get notified. You export a CSV yourself and open that file. This page does not move a project for you.`,
+  },
+];
+
+const crumbs = [
+  { name: 'Home', href: '/' },
+  { name: 'ChartGen alternative', href: '/chartgen-alternative/' },
+];
+
+const linkTargets = [seatingUrl, orgUrl, funnelUrl, notifyUrl];
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function answerHtml(answer: string): string {
+  let html = escapeHtml(answer);
+  for (const url of linkTargets) {
+    const path = url.replace('https://getbabeldoc.com', '');
+    const anchor = `<a class="text-accent underline-offset-4 hover:underline" href="${path}"${
+      url === notifyUrl ? ' data-open-notify' : ''
+    }>${url}</a>`;
+    html = html.replaceAll(url, anchor);
+  }
+  return html;
+}
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogTitle="ChartGen alternative: ChartGen shutting down"
+  jsonLd={[faqLd(faqs), breadcrumbLd(crumbs)]}
+>
+  <article>
+    <Breadcrumb items={crumbs} />
+    <header id="hero" class="max-w-3xl">
+      <h1 class="font-serif text-4xl leading-tight text-ink sm:text-5xl">ChartGen alternative: ChartGen shutting down</h1>
+      <p class="mt-4 text-lg leading-8">
+        ChartGen is shutting down on December 14, 2026
+        (<a class="text-accent underline-offset-4 hover:underline" href={shutdownUrl} rel="noopener noreferrer">source: ChartGen’s own homepage</a>).
+        This ChartGen alternative reads a CSV you export yourself. Every number is traceable to those rows, and the math is computed in this browser. Nothing is uploaded to a model.
+      </p>
+      <p class="mt-3 leading-7">
+        This site is not affiliated with ChartGen. It does not sign in for you, and it does not fetch your charts.
+      </p>
+    </header>
+
+    <div class="mt-8">
+      <ChartgenDemo />
+    </div>
+
+    <section id="steps" class="mt-12 scroll-mt-6" aria-labelledby="steps-title">
+      <h2 id="steps-title" class="font-serif text-2xl text-ink">Three steps, using a CSV you already have</h2>
+      <p class="mt-3 max-w-3xl leading-7">
+        You export the file, open it here, then check the numbers and save a picture or a table. Each drawing below is ours. It is not a picture of another product.
+      </p>
+      <ol class="mt-6 grid gap-4 lg:grid-cols-3">
+        <li class="rounded-lg border border-line bg-white p-4">
+          <p class="text-sm font-semibold text-accent">Step 1</p>
+          <svg class="mt-3 h-28 w-full" viewBox="0 0 200 112" aria-hidden="true">
+            <rect x="16" y="8" width="168" height="64" rx="6" fill="#faf7f2" stroke="#1c1917" stroke-width="2"></rect>
+            <path d="M16 28h168M16 48h168M72 8v64" fill="none" stroke="#e4dcd0" stroke-width="2"></path>
+            <path d="M100 80v16M92 88l8 8 8-8" fill="none" stroke="#7c2d12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <text x="100" y="108" text-anchor="middle" fill="#1c1917" font-size="12" font-family="Segoe UI, sans-serif">Your CSV</text>
+          </svg>
+          <h3 class="mt-3 font-serif text-xl text-ink">Export your data from ChartGen as CSV</h3>
+          <p class="mt-2 text-sm leading-6">
+            In the account you already use, save the rows as a CSV. This page does not connect to that account and does not download the file for you.
+          </p>
+        </li>
+        <li class="rounded-lg border border-line bg-white p-4">
+          <p class="text-sm font-semibold text-accent">Step 2</p>
+          <svg class="mt-3 h-28 w-full" viewBox="0 0 200 112" aria-hidden="true">
+            <rect x="16" y="28" width="36" height="48" rx="4" fill="#faf7f2" stroke="#1c1917" stroke-width="2"></rect>
+            <path d="M16 40h36" stroke="#e4dcd0" stroke-width="2"></path>
+            <text x="34" y="62" text-anchor="middle" fill="#1c1917" font-size="11" font-family="Segoe UI, sans-serif">CSV</text>
+            <path d="M62 52h28M82 44l8 8-8 8" fill="none" stroke="#7c2d12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+            <rect x="100" y="16" width="84" height="80" rx="6" fill="#ffffff" stroke="#1c1917" stroke-width="2"></rect>
+            <path d="M100 32h84" stroke="#1c1917" stroke-width="2"></path>
+            <circle cx="112" cy="24" r="2" fill="#7c2d12"></circle>
+            <circle cx="120" cy="24" r="2" fill="#c2410c"></circle>
+            <circle cx="128" cy="24" r="2" fill="#a16207"></circle>
+            <text x="142" y="64" text-anchor="middle" fill="#1c1917" font-size="12" font-family="Georgia, serif">Browser</text>
+          </svg>
+          <h3 class="mt-3 font-serif text-xl text-ink">Upload the CSV here</h3>
+          <p class="mt-2 text-sm leading-6">
+            Use Upload a CSV. The browser reads the file into the box on this page. You can paste the same text instead. Either way, it is not uploaded.
+          </p>
+        </li>
+        <li class="rounded-lg border border-line bg-white p-4">
+          <p class="text-sm font-semibold text-accent">Step 3</p>
+          <svg class="mt-3 h-28 w-full" viewBox="0 0 200 112" aria-hidden="true">
+            <polygon points="28,8 112,8 100,32 40,32" fill="#7c2d12"></polygon>
+            <polygon points="40,38 100,38 90,62 50,62" fill="#c2410c"></polygon>
+            <polygon points="50,68 90,68 82,92 58,92" fill="#a16207"></polygon>
+            <rect x="124" y="16" width="60" height="22" rx="4" fill="#faf7f2" stroke="#1c1917"></rect>
+            <rect x="124" y="44" width="60" height="22" rx="4" fill="#faf7f2" stroke="#1c1917"></rect>
+            <rect x="124" y="72" width="60" height="22" rx="4" fill="#faf7f2" stroke="#1c1917"></rect>
+            <text x="154" y="31" text-anchor="middle" fill="#1c1917" font-size="11" font-family="Segoe UI, sans-serif">PNG</text>
+            <text x="154" y="59" text-anchor="middle" fill="#1c1917" font-size="11" font-family="Segoe UI, sans-serif">SVG</text>
+            <text x="154" y="87" text-anchor="middle" fill="#1c1917" font-size="11" font-family="Segoe UI, sans-serif">CSV</text>
+          </svg>
+          <h3 class="mt-3 font-serif text-xl text-ink">Check the numbers, then export</h3>
+          <p class="mt-2 text-sm leading-6">
+            Read the reconciliation and select a stage to see the sum or the count. Then download PNG, SVG, or a CSV of the computed table.
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="comparison" class="mt-12 scroll-mt-6" aria-labelledby="comparison-title">
+      <h2 id="comparison-title" class="font-serif text-2xl text-ink">An honest look at the chart tools</h2>
+      <p class="mt-3 max-w-3xl leading-7">
+        BabelDoc draws a seating chart, an org chart, and a funnel chart in the browser. The other column is limited to what ChartGen’s public pages described. It is not a claim that the products match, and it is not a joint offer.
+      </p>
+      <p class="mt-4 text-base font-semibold text-ink">Last verified: {verified}.</p>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-muted">
+        Checked against ChartGen’s homepage at{' '}
+        <a class="text-accent underline-offset-4 hover:underline" href={shutdownUrl} rel="noopener noreferrer">{shutdownUrl}</a>
+        {' '}and its public bar, line, and heatmap feature pages on {verified}. Where a capability was not named there, the cell says so.
+      </p>
+      <div class="mt-4 max-w-full overflow-x-auto rounded-lg border border-line">
+        <table class="w-full min-w-[44rem] border-collapse text-left text-sm leading-6">
+          <caption class="sr-only">BabelDoc chart tools compared with capabilities described on ChartGen’s public pages</caption>
+          <thead class="bg-paper text-ink">
+            <tr>
+              <th scope="col" class="border-b border-line px-3 py-3 font-semibold">Capability</th>
+              <th scope="col" class="border-b border-line px-3 py-3 font-semibold">BabelDoc</th>
+              <th scope="col" class="border-b border-line px-3 py-3 font-semibold">ChartGen’s public pages</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Where a CSV is read</th>
+              <td class="border-b border-line px-3 py-3">In this browser. The file is not uploaded.</td>
+              <td class="border-b border-line px-3 py-3">The homepage FAQ describes uploading a CSV or an Excel file so the service can chart it.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Traceable funnel math</th>
+              <td class="border-b border-line px-3 py-3">Yes. A stage number is a sum or a count, and the rows are listed on the chart.</td>
+              <td class="border-b border-line px-3 py-3">A row-level equation was not named on the pages checked.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Funnel chart</th>
+              <td class="border-b border-line px-3 py-3">
+                Yes, on this page and on the{' '}
+                <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-funnel-chart-generator/">AI Funnel Chart Generator</a>.
+              </td>
+              <td class="border-b border-line px-3 py-3">Not named on the homepage FAQ or the bar, line, and heatmap pages checked.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Org chart</th>
+              <td class="border-b border-line px-3 py-3">
+                Yes.{' '}
+                <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-org-chart-generator/">AI Org Chart Generator</a>
+                {' '}reads name, title, and manager rows.
+              </td>
+              <td class="border-b border-line px-3 py-3">Not named on the pages checked.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Seating chart</th>
+              <td class="border-b border-line px-3 py-3">
+                Yes.{' '}
+                <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-seating-chart-generator/">AI Seating Chart Generator</a>
+                {' '}assigns a guest list to tables.
+              </td>
+              <td class="border-b border-line px-3 py-3">Not named on the pages checked.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Bar, line, pie, and heatmap</th>
+              <td class="border-b border-line px-3 py-3">
+                Roadmap.{' '}
+                <a class="font-semibold text-accent underline-offset-4 hover:underline" href="#notify" data-open-notify>Get notified</a>
+              </td>
+              <td class="border-b border-line px-3 py-3">The homepage FAQ names bar, line, and pie charts. Public pages also exist for a bar chart, a line chart, and a heatmap.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Excel workbook (.xlsx)</th>
+              <td class="border-b border-line px-3 py-3">
+                Roadmap. This page reads CSV.{' '}
+                <a class="font-semibold text-accent underline-offset-4 hover:underline" href="#notify" data-open-notify>Get notified</a>
+              </td>
+              <td class="border-b border-line px-3 py-3">The homepage FAQ names Excel as well as CSV.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">A written request that picks the chart</th>
+              <td class="border-b border-line px-3 py-3">
+                Roadmap. You open the chart page yourself.{' '}
+                <a class="font-semibold text-accent underline-offset-4 hover:underline" href="#notify" data-open-notify>Get notified</a>
+              </td>
+              <td class="border-b border-line px-3 py-3">The homepage FAQ describes writing what you want in ordinary language.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">PNG, SVG, and a computed CSV</th>
+              <td class="border-b border-line px-3 py-3">Yes. The files are made in this browser. A failed check asks you to confirm before the download.</td>
+              <td class="border-b border-line px-3 py-3">The homepage notice tells existing users to export their data. The file types were not listed on the pages checked.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="border-b border-line px-3 py-3 font-semibold">Language model</th>
+              <td class="border-b border-line px-3 py-3">Not called. The numbers are arithmetic on the rows you supplied.</td>
+              <td class="border-b border-line px-3 py-3">The homepage describes an AI that creates the chart from the file and the request.</td>
+            </tr>
+            <tr class="align-top">
+              <th scope="row" class="px-3 py-3 font-semibold">Price</th>
+              <td class="px-3 py-3">Free to open. A Pro plan is planned at $9 per month. The email box does not block a download.</td>
+              <td class="px-3 py-3">The shutdown notice mentions remaining credits. A current price list was not on the pages checked.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="faq" class="mt-12 scroll-mt-6">
+      <h2 class="font-serif text-2xl text-ink">Frequently asked questions</h2>
+      <div class="mt-4 space-y-6">
+        {
+          faqs.map((item) => (
+            <div>
+              <h3 class="font-serif text-lg text-ink">{item.question}</h3>
+              <p class="mt-2 leading-7" set:html={answerHtml(item.answer)} />
+            </div>
+          ))
+        }
+      </div>
+    </section>
+
+    <p class="mt-12 max-w-3xl text-sm leading-6 text-muted">
+      ChartGen is a trademark of its respective owner. This site is not affiliated with ChartGen.
+    </p>
+  </article>
+</BaseLayout>

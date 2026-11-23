@@ -9,6 +9,7 @@ const TOOLS = new Set([
   'ai-seating-chart-generator',
   'ai-org-chart-generator',
   'ai-funnel-chart-generator',
+  'chartgen-alternative',
 ]);
 const HOUR_MS = 60 * 60 * 1000;
 const HOURLY_LIMIT = 5;

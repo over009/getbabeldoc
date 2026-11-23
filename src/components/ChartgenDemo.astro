@@ -1,0 +1,583 @@
+---
+import EarlyBird from './EarlyBird.astro';
+import ExportConfirm from './ExportConfirm.astro';
+
+// In-browser funnel for a CSV the visitor already exported. The file is never uploaded.
+---
+
+<div data-chartgen class="min-w-0 max-w-full rounded-lg border border-line bg-white p-4 sm:p-5">
+  <p class="text-sm leading-6 text-muted">
+    Every stage number can be traced to the rows behind it, and the math is computed in this browser. The file stays here. Nothing is uploaded to a model.
+  </p>
+
+  <div class="mt-4 flex flex-wrap items-center gap-3">
+    <label class="inline-flex min-h-11 cursor-pointer items-center rounded-md border border-ink bg-ink px-4 py-2 text-sm font-semibold text-paper hover:bg-accent">
+      Upload a CSV
+      <input class="sr-only" type="file" accept=".csv,text/csv,text/plain,.txt" data-field="file" />
+    </label>
+    <button type="button" data-action="sample" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Load a sample CSV
+    </button>
+  </div>
+  <p class="mt-2 text-sm leading-6 text-muted">The sample is example rows on this page, not a file from another product.</p>
+
+  <label for="chartgen-csv" class="mt-4 block text-sm font-semibold">CSV</label>
+  <textarea
+    id="chartgen-csv"
+    class="mt-1 min-h-36 w-full resize-y rounded-md border border-line bg-paper px-3 py-2 font-mono text-sm leading-6 text-ink"
+    rows="7"
+    data-field="csv"
+    placeholder={'Stage,Amount\nVisit,30\nSignup,25\nPurchase,10'}
+    autocomplete="off"
+    spellcheck="false"
+  ></textarea>
+  <label class="mt-3 flex items-center gap-2 text-sm leading-6">
+    <input type="checkbox" data-field="header" checked />
+    First row is column names
+  </label>
+  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+    <label class="block text-sm font-semibold" for="chartgen-stage-column">
+      Stage column
+      <select id="chartgen-stage-column" data-field="stage" class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 font-normal text-ink"></select>
+    </label>
+    <label class="block text-sm font-semibold" for="chartgen-value-column">
+      Value column
+      <select id="chartgen-value-column" data-field="value" class="mt-1 w-full rounded-md border border-line bg-paper px-3 py-2 font-normal text-ink"></select>
+    </label>
+  </div>
+  <fieldset class="mt-4">
+    <legend class="text-sm font-semibold">What the stage number means</legend>
+    <div class="mt-2 flex flex-wrap gap-4 text-sm leading-6">
+      <label class="flex items-center gap-2"><input type="radio" name="chartgen-measure" value="sum" data-measure="sum" checked /> Sum the value column</label>
+      <label class="flex items-center gap-2"><input type="radio" name="chartgen-measure" value="count" data-measure="count" /> Count rows in each stage</label>
+    </div>
+  </fieldset>
+  <div class="mt-4">
+    <button type="button" data-action="generate" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+      Generate
+    </button>
+  </div>
+
+  <div data-results class="mt-6 min-w-0 max-w-full" hidden>
+    <p data-summary class="text-sm leading-6 text-muted"></p>
+    <div class="mt-3 grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div class="min-w-0 rounded-md border border-line bg-paper p-4 lg:col-start-2 lg:row-start-1" role="region" aria-labelledby="chartgen-reconcile-title">
+        <p id="chartgen-reconcile-title" class="font-serif text-xl text-ink">Reconciliation</p>
+        <ul data-reconcile class="mt-3 space-y-2 text-sm leading-6"></ul>
+      </div>
+      <div class="min-w-0 lg:col-start-1 lg:row-start-1">
+        <div data-scroll class="max-w-full overflow-x-auto rounded-md border border-line bg-white">
+          <svg data-chart xmlns="http://www.w3.org/2000/svg" role="group" aria-label="Funnel chart"></svg>
+        </div>
+        <div class="mt-4 rounded-md border border-line bg-paper p-4" role="region" aria-labelledby="chartgen-detail-title">
+          <p id="chartgen-detail-title" class="font-serif text-xl text-ink" data-detail-title>Stage</p>
+          <p data-detail-calc class="mt-2 leading-7"></p>
+          <p data-detail-equation class="mt-2 font-mono text-sm leading-6" hidden></p>
+          <p data-detail-percent class="mt-2 text-sm leading-6 text-muted"></p>
+          <div data-detail-table class="mt-3 max-h-64 min-w-0 max-w-full overflow-auto"></div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button type="button" data-action="png" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download PNG
+      </button>
+      <button type="button" data-action="svg" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download SVG
+      </button>
+      <button type="button" data-action="csv" class="inline-flex min-h-11 items-center rounded-md border border-ink px-4 py-2 text-sm font-semibold text-ink hover:bg-ink hover:text-paper">
+        Download CSV
+      </button>
+    </div>
+    <p class="mt-3 text-sm leading-6">
+      More room for the same file is on the{' '}
+      <a class="text-accent underline-offset-4 hover:underline" href="/tools/ai-funnel-chart-generator/">AI Funnel Chart Generator</a>.
+    </p>
+    <ExportConfirm />
+  </div>
+
+  <section id="notify" class="scroll-mt-6" hidden>
+    <h2 class="mt-6 font-serif text-2xl text-ink">Email for the early-bird price</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">
+      This box appears after an export, and when you choose Get notified on a roadmap row. It sends the email address and the name chartgen-alternative. The CSV stays in this browser.
+    </p>
+    <EarlyBird />
+  </section>
+
+  <p data-status class="mt-4 text-sm leading-6" aria-live="polite"></p>
+  <noscript>
+    <p class="mt-4 text-sm leading-6">
+      Turn on JavaScript to read a CSV and draw the chart. The guide further down this page stays readable either way.
+    </p>
+  </noscript>
+</div>
+
+<style>
+  [data-chartgen] [data-scroll] svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+</style>
+
+<script>
+  import { formatNumber } from '../lib/csv';
+  import { downloadBlob, downloadText, serializeSvg, svgToPngBlob } from '../lib/download';
+  import { trackChart, watchChartInput } from '../lib/analytics';
+  import { bindEarlyBird } from '../lib/early-bird';
+  import { bindExportConfirm } from '../lib/export-confirm';
+  import {
+    FUNNEL_LIMITS,
+    SAMPLE_FUNNEL,
+    buildFunnel,
+    funnelColumns,
+    funnelCsv,
+    funnelHeaderLikely,
+    stagePercents,
+    type FunnelModel,
+  } from '../lib/funnel-chart';
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const FILLS = ['#7c2d12', '#9a3412', '#c2410c', '#b45309', '#a16207', '#78716c', '#57534e', '#44403c'];
+  const TOOL = 'chartgen-alternative';
+  const root = document.querySelector('[data-chartgen]');
+
+  if (root) {
+    const csvBox = root.querySelector('[data-field="csv"]');
+    const fileInput = root.querySelector('[data-field="file"]');
+    const headerBox = root.querySelector('[data-field="header"]');
+    const stageSelect = root.querySelector('[data-field="stage"]');
+    const valueSelect = root.querySelector('[data-field="value"]');
+    const results = root.querySelector('[data-results]');
+    const summary = root.querySelector('[data-summary]');
+    const svg = root.querySelector('[data-chart]');
+    const detailTitle = root.querySelector('[data-detail-title]');
+    const detailCalc = root.querySelector('[data-detail-calc]');
+    const detailEquation = root.querySelector('[data-detail-equation]');
+    const detailPercent = root.querySelector('[data-detail-percent]');
+    const detailTable = root.querySelector('[data-detail-table]');
+    const reconcile = root.querySelector('[data-reconcile]');
+    const status = root.querySelector('[data-status]');
+    const notify = document.getElementById('notify');
+
+    if (
+      csvBox instanceof HTMLTextAreaElement &&
+      fileInput instanceof HTMLInputElement &&
+      headerBox instanceof HTMLInputElement &&
+      stageSelect instanceof HTMLSelectElement &&
+      valueSelect instanceof HTMLSelectElement &&
+      results instanceof HTMLElement &&
+      summary instanceof HTMLElement &&
+      svg instanceof SVGSVGElement &&
+      detailTitle instanceof HTMLElement &&
+      detailCalc instanceof HTMLElement &&
+      detailEquation instanceof HTMLElement &&
+      detailPercent instanceof HTMLElement &&
+      detailTable instanceof HTMLElement &&
+      reconcile instanceof HTMLElement &&
+      status instanceof HTMLElement &&
+      notify instanceof HTMLElement
+    ) {
+      let model: FunnelModel | null = null;
+      let selected = '';
+      let headerTouched = false;
+      let measure: 'sum' | 'count' = 'sum';
+      const csvInput = watchChartInput(TOOL, csvBox);
+      const earlyBird = bindEarlyBird(root, TOOL);
+
+      const setStatus = (message: string) => {
+        status.textContent = message;
+      };
+
+      const syncMeasure = () => {
+        const checked = root.querySelector(`[data-measure="${measure}"]`);
+        if (checked instanceof HTMLInputElement) checked.checked = true;
+        valueSelect.disabled = measure === 'count';
+      };
+
+      const syncColumns = () => {
+        const preview = funnelColumns(csvBox.value, headerBox.checked);
+        const previousStage = stageSelect.value;
+        const previousValue = valueSelect.value;
+        stageSelect.replaceChildren();
+        valueSelect.replaceChildren();
+        for (const column of preview.columns) {
+          const stageOption = document.createElement('option');
+          stageOption.value = String(column.index);
+          stageOption.textContent = column.label;
+          stageSelect.append(stageOption);
+          const valueOption = document.createElement('option');
+          valueOption.value = String(column.index);
+          valueOption.textContent = column.label;
+          valueSelect.append(valueOption);
+        }
+        if (preview.columns.some((column) => String(column.index) === previousStage)) stageSelect.value = previousStage;
+        if (preview.columns.some((column) => String(column.index) === previousValue)) valueSelect.value = previousValue;
+        else if (preview.columns.length > 1) valueSelect.selectedIndex = 1;
+        return preview;
+      };
+
+      const syncHeader = () => {
+        if (!headerTouched) headerBox.checked = funnelHeaderLikely(csvBox.value);
+        return syncColumns();
+      };
+
+      const revealEmail = (force: boolean) => {
+        const box = notify.querySelector('[data-early-bird]');
+        if (!(box instanceof HTMLElement)) return;
+        if (force) box.hidden = false;
+        else earlyBird.show();
+        if (box.hidden) return;
+        notify.hidden = false;
+        notify.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+
+      const selectStage = (label: string) => {
+        if (!model) return;
+        const index = model.stages.findIndex((stage) => stage.label === label);
+        const stage = model.stages[index];
+        if (!stage) return;
+        selected = stage.label;
+        const percents = stagePercents(model.stages, index);
+        detailTitle.textContent = stage.label;
+        detailCalc.textContent = stage.computation;
+        detailEquation.hidden = !stage.equation;
+        detailEquation.textContent = stage.equation ?? '';
+        const previous = index === 0 ? 'No previous stage.' : `${percents.previous} of the previous stage.`;
+        detailPercent.textContent = `${previous} ${percents.top} of the top stage.`;
+        const table = document.createElement('table');
+        table.className = 'w-full border-collapse text-left text-sm';
+        const head = document.createElement('tr');
+        for (const header of model.headers) {
+          const cell = document.createElement('th');
+          cell.className = 'border-b border-line px-2 py-1 font-semibold';
+          cell.textContent = header;
+          head.append(cell);
+        }
+        const body = document.createElement('tbody');
+        for (const row of stage.rows.slice(0, FUNNEL_LIMITS.listedRows)) {
+          const tr = document.createElement('tr');
+          for (let column = 0; column < model.headers.length; column += 1) {
+            const cell = document.createElement('td');
+            cell.className = 'border-b border-line px-2 py-1 align-top';
+            cell.textContent = row[column] ?? '';
+            tr.append(cell);
+          }
+          body.append(tr);
+        }
+        table.append(head, body);
+        detailTable.replaceChildren(table);
+        svg.querySelectorAll('[data-band]').forEach((node) => {
+          if (!(node instanceof SVGElement)) return;
+          const on = node.dataset.stage === stage.label;
+          node.setAttribute('aria-pressed', on ? 'true' : 'false');
+          node.querySelector('[data-highlight]')?.setAttribute('display', on ? 'inline' : 'none');
+        });
+      };
+
+      const render = () => {
+        if (!model) return;
+        const stages = model.stages;
+        results.hidden = false;
+        const available = Math.max(280, svg.parentElement?.clientWidth ?? 640);
+        const compact = available < 560;
+        const leftInset = compact ? 8 : 24;
+        const funnelWidth = compact ? Math.min(140, Math.floor(available * 0.42)) : 250;
+        const rowHeight = compact ? 56 : 76;
+        const gap = compact ? 6 : 8;
+        const labelX = leftInset + funnelWidth + (compact ? 12 : 32);
+        const width = compact ? available : labelX + 236;
+        const height = Math.max(120, stages.length * (rowHeight + gap) + 24);
+        const max = Math.max(...stages.map((stage) => Math.max(stage.value, 0)), 0);
+        const barWidth = (value: number) => {
+          if (max <= 0) return funnelWidth * 0.42;
+          return Math.max(funnelWidth * 0.2, (Math.max(value, 0) / max) * funnelWidth);
+        };
+        svg.setAttribute('width', String(width));
+        svg.setAttribute('height', String(height));
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        svg.replaceChildren();
+        const background = document.createElementNS(NS, 'rect');
+        background.setAttribute('width', String(width));
+        background.setAttribute('height', String(height));
+        background.setAttribute('fill', '#ffffff');
+        svg.append(background);
+
+        stages.forEach((stage, index) => {
+          const topWidth = barWidth(stage.value);
+          const next = stages[index + 1];
+          const bottomWidth = next ? barWidth(next.value) : Math.max(funnelWidth * 0.16, topWidth * 0.72);
+          const y = 12 + index * (rowHeight + gap);
+          const center = leftInset + funnelWidth / 2;
+          const points = [
+            [center - topWidth / 2, y],
+            [center + topWidth / 2, y],
+            [center + bottomWidth / 2, y + rowHeight],
+            [center - bottomWidth / 2, y + rowHeight],
+          ].map((pair) => pair.join(',')).join(' ');
+          const left = Math.min(center - topWidth / 2, center - bottomWidth / 2);
+          const right = Math.max(center + topWidth / 2, center + bottomWidth / 2);
+          const group = document.createElementNS(NS, 'g');
+          group.dataset.stage = stage.label;
+          group.dataset.band = 'true';
+          group.setAttribute('tabindex', '0');
+          group.setAttribute('role', 'button');
+          group.setAttribute('aria-pressed', stage.label === selected ? 'true' : 'false');
+          group.setAttribute('aria-label', `${stage.label}, ${formatNumber(stage.value)}. Show how this number was computed.`);
+          const highlight = document.createElementNS(NS, 'rect');
+          highlight.dataset.highlight = 'true';
+          highlight.setAttribute('x', String(left - 6));
+          highlight.setAttribute('y', String(y - 6));
+          highlight.setAttribute('width', String(right - left + 12));
+          highlight.setAttribute('height', String(rowHeight + 12));
+          highlight.setAttribute('rx', '4');
+          highlight.setAttribute('fill', 'none');
+          highlight.setAttribute('stroke', '#1c1917');
+          highlight.setAttribute('stroke-width', '2');
+          highlight.setAttribute('display', stage.label === selected ? 'inline' : 'none');
+          const shape = document.createElementNS(NS, 'polygon');
+          shape.setAttribute('points', points);
+          shape.setAttribute('fill', FILLS[index % FILLS.length] ?? '#7c2d12');
+          const title = document.createElementNS(NS, 'title');
+          title.textContent = stage.computation;
+          group.append(title, highlight, shape);
+          if (topWidth > (compact ? 64 : 110)) {
+            const inside = document.createElementNS(NS, 'text');
+            inside.setAttribute('x', String(center));
+            inside.setAttribute('y', String(y + rowHeight / 2 + 5));
+            inside.setAttribute('text-anchor', 'middle');
+            inside.setAttribute('fill', '#ffffff');
+            inside.setAttribute('font-size', compact ? '13' : '16');
+            inside.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+            inside.textContent = formatNumber(stage.value);
+            group.append(inside);
+          }
+          const labels = document.createElementNS(NS, 'g');
+          labels.dataset.stage = stage.label;
+          const percents = stagePercents(stages, index);
+          const nameLimit = compact ? 16 : 28;
+          const name = document.createElementNS(NS, 'text');
+          name.setAttribute('x', String(labelX));
+          name.setAttribute('y', String(y + (compact ? 18 : 24)));
+          name.setAttribute('fill', '#1c1917');
+          name.setAttribute('font-size', compact ? '14' : '16');
+          name.setAttribute('font-weight', '600');
+          name.setAttribute('font-family', 'Georgia, Palatino, serif');
+          name.textContent = stage.label.length > nameLimit ? `${stage.label.slice(0, nameLimit - 1)}…` : stage.label;
+          const value = document.createElementNS(NS, 'text');
+          value.setAttribute('x', String(labelX));
+          value.setAttribute('y', String(y + (compact ? 38 : 46)));
+          value.setAttribute('fill', '#1c1917');
+          value.setAttribute('font-size', compact ? '13' : '14');
+          value.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+          value.textContent = formatNumber(stage.value);
+          labels.append(name, value);
+          if (!compact) {
+            const rates = document.createElementNS(NS, 'text');
+            rates.setAttribute('x', String(labelX));
+            rates.setAttribute('y', String(y + 66));
+            rates.setAttribute('fill', '#44403c');
+            rates.setAttribute('font-size', '12');
+            rates.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+            rates.textContent = `${percents.previous} of previous · ${percents.top} of top`;
+            labels.append(rates);
+          }
+          svg.append(group, labels);
+        });
+
+        exportGate.hide();
+        reconcile.replaceChildren();
+        for (const line of model.reconcile) {
+          const item = document.createElement('li');
+          item.textContent = line;
+          reconcile.append(item);
+        }
+        summary.textContent = `${stages.length} ${stages.length === 1 ? 'stage' : 'stages'}. Percent of previous uses the stage above. Percent of top uses the first stage. Select a stage to see the rows.`;
+        if (!stages.some((stage) => stage.label === selected)) selected = stages[0]?.label ?? '';
+        selectStage(selected);
+      };
+
+      const generate = () => {
+        const built = buildFunnel({
+          text: csvBox.value,
+          mode: measure,
+          firstRowHeader: headerBox.checked,
+          stageColumn: Number(stageSelect.value),
+          valueColumn: Number(valueSelect.value),
+        });
+        if (!built.ok) {
+          setStatus(built.error);
+          return false;
+        }
+        model = built.model;
+        selected = built.model.stages[0]?.label ?? '';
+        render();
+        trackChart(TOOL, 'chart_rendered');
+        const reasons = built.model.failedCheckIds.join(',');
+        if (reasons) trackChart(TOOL, 'check_failed', { reasons, stage: 'render' });
+        setStatus(`Drew ${built.model.stages.length} ${built.model.stages.length === 1 ? 'stage' : 'stages'} in this browser. The file was not uploaded.`);
+        return true;
+      };
+
+      csvBox.addEventListener('input', () => {
+        syncHeader();
+      });
+      headerBox.addEventListener('change', () => {
+        headerTouched = true;
+        syncColumns();
+      });
+      root.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (target.name === 'chartgen-measure' && (target.value === 'sum' || target.value === 'count')) {
+          measure = target.value;
+          syncMeasure();
+        }
+      });
+
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files?.[0];
+        fileInput.value = '';
+        if (!file) return;
+        if (file.size > FUNNEL_LIMITS.fileBytes) {
+          setStatus('That file is over 1.5 MB. Shorten it and try again. It was not read.');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          csvBox.value = typeof reader.result === 'string' ? reader.result : '';
+          csvInput.markLoaded(csvBox.value);
+          headerTouched = false;
+          const preview = syncHeader();
+          measure = preview.columns.length > 1 ? 'sum' : 'count';
+          syncMeasure();
+          if (preview.columns.length > 1) {
+            stageSelect.selectedIndex = 0;
+            valueSelect.selectedIndex = 1;
+          }
+          const drew = generate();
+          if (drew) {
+            setStatus(`Read ${file.name} in this browser and drew the chart. It was not uploaded. Change the columns and press Generate if a column is wrong.`);
+          }
+        };
+        reader.onerror = () => setStatus('Could not read that file in this browser.');
+        reader.readAsText(file);
+      });
+
+      const activate = (label: string | undefined) => {
+        if (!label) return;
+        selectStage(label);
+        setStatus(`Showing how ${label} was computed.`);
+      };
+      svg.addEventListener('click', (event) => {
+        const group = event.target instanceof Element ? event.target.closest('[data-stage]') : null;
+        if (group instanceof SVGElement) activate(group.dataset.stage);
+      });
+      svg.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const group = event.target instanceof Element ? event.target.closest('[data-stage]') : null;
+        if (!(group instanceof SVGElement)) return;
+        event.preventDefault();
+        activate(group.dataset.stage);
+      });
+
+      root.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest('[data-action]');
+        if (!(button instanceof HTMLButtonElement)) return;
+        const action = button.dataset.action;
+        if (action === 'generate') {
+          generate();
+          return;
+        }
+        if (action === 'sample') {
+          csvBox.value = SAMPLE_FUNNEL;
+          csvInput.note(csvBox.value);
+          trackChart(TOOL, 'sample_loaded');
+          measure = 'sum';
+          headerTouched = true;
+          headerBox.checked = true;
+          syncMeasure();
+          syncColumns();
+          const stageIndex = [...stageSelect.options].findIndex((option) => option.textContent === 'Stage');
+          const valueIndex = [...valueSelect.options].findIndex((option) => option.textContent === 'Amount');
+          if (stageIndex >= 0) stageSelect.selectedIndex = stageIndex;
+          if (valueIndex >= 0) valueSelect.selectedIndex = valueIndex;
+          generate();
+          setStatus('Loaded the sample CSV and drew the funnel in this browser. Visit is 30 + 20.');
+          return;
+        }
+        if (!model) return;
+        if (action === 'csv' || action === 'svg' || action === 'png') {
+          trackChart(TOOL, 'export_click', { format: action });
+          const reasons = model.failedCheckIds.join(',');
+          if (reasons) trackChart(TOOL, 'check_failed', { reasons, stage: 'export' });
+          const issues = model.exportBlockers;
+          if (issues.length > 0) setStatus('These checks did not pass. Press Export anyway to save the file, or Cancel.');
+          exportGate.request(action, issues);
+        }
+      });
+
+      document.querySelectorAll('[data-open-notify]').forEach((node) => {
+        node.addEventListener('click', (event) => {
+          event.preventDefault();
+          revealEmail(true);
+        });
+      });
+
+      const finishExport = (format: 'csv' | 'svg' | 'png', confirmed: boolean, message: string) => {
+        trackChart(TOOL, 'export_done', { format, export_anyway: confirmed });
+        setStatus(message);
+        revealEmail(false);
+      };
+
+      const saveCsv = (confirmed: boolean) => {
+        if (!model) return;
+        downloadText('funnel-chart.csv', funnelCsv(model.stages), 'text/csv;charset=utf-8');
+        finishExport('csv', confirmed, 'Downloaded a CSV of the computed stages.');
+      };
+
+      const saveSvg = (confirmed: boolean) => {
+        const clone = svg.cloneNode(true) as SVGSVGElement;
+        const credit = document.createElementNS(NS, 'text');
+        credit.setAttribute('x', '16');
+        credit.setAttribute('y', String(Number(svg.getAttribute('height')) - 6));
+        credit.setAttribute('fill', '#44403c');
+        credit.setAttribute('font-size', '12');
+        credit.setAttribute('font-family', '"Segoe UI", system-ui, sans-serif');
+        credit.textContent = 'getbabeldoc.com';
+        clone.append(credit);
+        downloadText('funnel-chart.svg', serializeSvg(clone), 'image/svg+xml;charset=utf-8');
+        finishExport('svg', confirmed, 'Downloaded an SVG of this funnel.');
+      };
+
+      const savePng = (confirmed: boolean) => {
+        void svgToPngBlob(svg).then((blob) => {
+          if (!blob) {
+            setStatus('Could not create the PNG in this browser.');
+            return;
+          }
+          downloadBlob('funnel-chart.png', blob);
+          finishExport('png', confirmed, 'Downloaded a PNG of this funnel.');
+        });
+      };
+
+      const exportGate = bindExportConfirm(root, (action, confirmed) => {
+        if (action === 'csv') saveCsv(confirmed);
+        if (action === 'svg') saveSvg(confirmed);
+        if (action === 'png') savePng(confirmed);
+      });
+
+      let resizeTimer = 0;
+      window.addEventListener('resize', () => {
+        if (!model) return;
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(() => render(), 150);
+      });
+
+      syncHeader();
+      syncMeasure();
+    }
+  }
+</script>
