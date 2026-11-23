@@ -80,6 +80,8 @@ Do not put secrets in `wrangler.jsonc`. This site has none.
 | `/tools/word-counter/` | Placeholder sample tool |
 | `/tools/token-counter/` | GPT, Claude, and Gemini token counter |
 | `/tools/super-bowl-squares-generator/` | Printable squares sheet |
+| `/tools/discord-timestamp-generator/` | Discord timestamp codes for every chat style |
+| `/tools/tournament-bracket-generator/` | Single-elimination bracket |
 | `/about/` | About |
 | `/privacy/` | Privacy policy |
 | `/terms/` | Terms of use |
