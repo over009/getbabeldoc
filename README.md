@@ -57,7 +57,7 @@ Build settings, from **Settings → Build**:
 
 `npm run build` must run before the assets are uploaded, because that is what creates `dist/`. `wrangler.jsonc` sets `build.command` to `npm run build`. Both `npx wrangler deploy` and `npx wrangler preview` run that command themselves before they look for `dist/`. Pull request builds only run `npx wrangler preview`, with no separate dashboard build step, so the Wrangler command is what produces the preview.
 
-Pages are still static assets. `src/worker.ts` runs only for `/api/*` (`run_worker_first`). `POST /api/early-access` stores an optional early-bird email in the D1 database `getbabeldoc-early-access` (binding `DB`). The chart files are not part of that request.
+Pages are still static assets. `src/worker.ts` runs only for `/api/*` (`run_worker_first`). `POST /api/early-access` stores an optional early-bird email in the D1 database `getbabeldoc-early-access` (binding `DB`). The chart files are not part of that request. The `tool` value may be `ai-seating-chart-generator`, `ai-org-chart-generator`, `ai-funnel-chart-generator`, or `chartgen-alternative`.
 
 The `database_id` in `wrangler.jsonc` is a placeholder until the database exists. Create it and apply the migration before relying on the form in production or in a preview:
 
@@ -106,6 +106,7 @@ Do not put secrets in `wrangler.jsonc`. This site has none.
 | `/tools/ai-seating-chart-generator/` | Seating chart from a guest list |
 | `/tools/ai-org-chart-generator/` | Org chart from names, titles, and managers |
 | `/tools/ai-funnel-chart-generator/` | Funnel chart from a CSV or typed stages |
+| `/chartgen-alternative/` | ChartGen alternative. A CSV is charted in the browser. |
 | `/about/` | About |
 | `/privacy/` | Privacy policy |
 | `/api/early-access` | POST an early-bird email. Not a page. |
